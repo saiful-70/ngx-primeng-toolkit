@@ -1,8 +1,7 @@
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { signal, Signal } from '@angular/core';
 import { signalState, patchState } from '@ngrx/signals';
-import { LazyLoadEvent as TableLazyLoadEvent } from 'primeng/api';
-import { Table } from 'primeng/table';
+import { Table, TableLazyLoadEvent } from 'primeng/table';
 import { firstValueFrom } from 'rxjs';
 
 import { SkipLoadingSpinner } from './http-context-tokens';
