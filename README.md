@@ -1,6 +1,6 @@
 # NGX PrimeNG Toolkit
 
-A comprehensive TypeScript utility library for Angular component state management, including PrimeNG table helpers, ng-select integration, data storage, and HTTP caching utilities with NgRx Signals.
+A comprehensive TypeScript utility library for Angular component state management, including PrimeNG table helpers, ng-select integration, data storage, and HTTP caching utilities with NgRx Signals. Compatible with **Angular 19+** and **PrimeNG 19+** (optimized for Angular 20+ and PrimeNG 20+).
 
 ## Features
 
@@ -68,23 +68,29 @@ A TypeScript utility library for advanced PrimeNG table state management in Angu
 ## Installation
 
 ```bash
-npm install ng-component-state-utils
+npm install ngx-primeng-toolkit
 ```
 
 ## Peer Dependencies
 
+Ensure you have compatible versions of the peer dependencies:
+
 ```bash
-# Core dependencies
-npm install @angular/common @angular/core @ngrx/signals rxjs
+# Core dependencies (Angular 19+ supported, 20+ recommended)
+npm install @angular/common@^19.0.0 @angular/core@^19.0.0 @ngrx/signals@^19.0.0 rxjs@^7.0.0
+
+# For Angular 20+ projects (recommended)
+npm install @angular/common@^20.0.0 @angular/core@^20.0.0 @ngrx/signals@^20.0.0 rxjs@^7.0.0
 
 # UI library dependencies (choose what you need)
-npm install primeng        # For PrimeNG table helpers
-npm install @ng-select/ng-select  # For ng-select helpers
+npm install primeng@^19.0.0        # For PrimeNG table helpers (19+ supported)
+npm install primeng@^20.0.0        # For PrimeNG table helpers (20+ recommended)
+npm install @ng-select/ng-select@^15.0.0  # For ng-select helpers
 ```
 
 Optional (for response validation):
 ```bash
-npm install zod
+npm install zod@^3.0.0
 ```
 
 ## Basic Usage
@@ -1457,8 +1463,8 @@ git push origin feature/new-functionality
 ## Browser Support
 
 - Modern browsers supporting ES2020+
-- Angular 19+
-- PrimeNG 19+ (optional, for table helpers)
+- Angular 19+ (Angular 20+ recommended)
+- PrimeNG 19+ (PrimeNG 20+ recommended) (optional, for table helpers)
 - @ng-select/ng-select 15+ (optional, for select helpers)
 
 ## Contributing

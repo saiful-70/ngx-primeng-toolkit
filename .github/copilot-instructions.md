@@ -6,7 +6,7 @@ This is a TypeScript npm package for advanced PrimeNG table state management in 
 
 ## Project Context
 - **Purpose**: Utility library for PrimeNG table state management with lazy loading, filtering, sorting, and pagination
-- **Target Framework**: Angular with PrimeNG 19+, NgRx Signals, and RxJS
+- **Target Framework**: Angular with PrimeNG 19+, NgRx Signals, and RxJS (optimized for Angular 20+ and PrimeNG 20+)
 - **Package Type**: TypeScript library with ESM/CJS dual output
 - **Build Tool**: tsup for fast bundling
 
