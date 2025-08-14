@@ -89,7 +89,7 @@ npm install zod
 import { Component, inject, viewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Table } from 'primeng/table';
-import { PrimengPagedDataTableStateHelper } from 'ngx-primeng-toolkit';
+import { PrimeNgDynamicTableStateHelper } from 'ngx-primeng-toolkit';
 
 interface User {
   id: number;
@@ -167,7 +167,7 @@ export class UserTableComponent {
   private readonly httpClient = inject(HttpClient);
   private readonly dataTableRef = viewChild.required<Table>('dt');
 
-  readonly tableState = PrimeNgTableStateHelper.create<User>({
+  readonly tableState = PrimeNgDynamicTableStateHelper.create<User>({
     url: '/api/users/query',
     httpClient: this.httpClient
   });
@@ -226,7 +226,7 @@ export class AdvancedTableComponent {
 export class AdvancedUserTableComponent {
   private readonly httpClient = inject(HttpClient);
   
-  readonly tableState = PrimeNgTableStateHelper.create<User>({
+  readonly tableState = PrimeNgDynamicTableStateHelper.create<User>({
     url: '/api/users/query',
     httpClient: this.httpClient,
     // Optional: Pass loading spinner context token
@@ -352,7 +352,7 @@ The library supports the following filter mappings:
 
 ## Class Methods
 
-### PrimeNgTableStateHelper Methods
+### PrimeNgDynamicTableStateHelper Methods
 
 - `static create<T>(options)` - Creates new instance
 - `setUniqueKey(key)` - Sets unique identifier field name
@@ -1063,7 +1063,7 @@ interface CustomUser {
   };
 }
 
-const tableState = PrimeNgTableStateHelper.create<CustomUser>({
+const tableState = PrimeNgDynamicTableStateHelper.create<CustomUser>({
   url: '/api/users',
   httpClient: this.httpClient
 });

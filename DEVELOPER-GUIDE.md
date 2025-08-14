@@ -14,7 +14,6 @@ src/
 ├── memoized-data-storage.ts      # Memoized data storage class
 ├── ng-select-helper.ts           # NgSelect helper utilities
 ├── paged-table-state-helper.ts   # Simple paged table state
-├── table-state-helper.ts         # Core table state management classes
 ├── table-utils.ts               # Table configuration utilities
 └── types.ts                     # Utility types and interfaces
 
@@ -229,7 +228,7 @@ The library relies on PrimeNG's built-in debouncing for filter changes.
 Test individual functions and classes:
 
 ```typescript
-describe('PrimeNgTableStateHelper', () => {
+describe('PrimeNgDynamicTableStateHelper', () => {
   it('should create instance with correct initial state', () => {
     // Test implementation
   });
@@ -246,7 +245,7 @@ Ensure TypeScript types work correctly:
 
 ```typescript
 // Should compile without errors
-const helper = PrimeNgTableStateHelper.create<User>({
+const helper = PrimeNgDynamicTableStateHelper.create<User>({
   url: '/api/users',
   httpClient: mockHttpClient
 });
@@ -279,7 +278,7 @@ npm publish --access public
 ### Basic Table Setup
 
 ```typescript
-const tableState = PrimeNgTableStateHelper.create<DataType>({
+const tableState = PrimeNgDynamicTableStateHelper.create<DataType>({
   url: '/api/endpoint',
   httpClient: this.httpClient
 });

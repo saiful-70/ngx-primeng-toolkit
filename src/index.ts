@@ -22,7 +22,3 @@ export * from './ng-select-helper';
 
 // Export all types and interfaces
 export * from './types';
-
-// Backward compatibility aliases
-export { PrimeNgDynamicTableStateHelper as PrimeNgTableStateHelper } from './dynamic-table-state-helper';
-export { PrimeNgDynamicTableStateHelper as default } from './dynamic-table-state-helper';

@@ -19,7 +19,8 @@ This is a TypeScript npm package for advanced PrimeNG table state management in 
 - Follow Angular best practices and conventions
 
 ## Architecture Patterns
-- Core table state management in `src/table-state-helper.ts`
+- Dynamic table state management in `src/dynamic-table-state-helper.ts`
+- Simple paged table utilities in `src/paged-table-state-helper.ts`
 - Table configuration utilities in `src/table-utils.ts`
 - Main exports in `src/index.ts`
 - Tree-shakeable exports for optimal bundle size
@@ -33,7 +34,8 @@ This is a TypeScript npm package for advanced PrimeNG table state management in 
 - No runtime dependencies to keep package lightweight
 
 ## Key Classes and Functions to Maintain
-- `PrimeNgTableStateHelper<T>`: Main state management class
+- `PrimeNgDynamicTableStateHelper<T>`: Main dynamic table state management class
+- `PrimengPagedDataTableStateHelper<T>`: Simple paged table state management class
 - `createTextColumn()`, `createNumericColumn()`, `createBooleanColumn()`: Column configuration utilities
 - `createPrimengStringMatchModes()`, `createPrimengNumberMatchModes()`: Filter mode utilities
 - `DynamicQueryDto`, `DynamicQueryFilterDto`, `DynamicQuerySortDto`: API interfaces
