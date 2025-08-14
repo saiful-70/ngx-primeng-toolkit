@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * Comprehensive Example Usage of primeng-table-state-helper
+ * Comprehensive Example Usage of ngx-primeng-toolkit
  * 
  * This example demonstrates both table state helpers and all complementary utilities
  * in a real-world Angular component scenario based on the actual usage patterns.
@@ -36,7 +36,7 @@ import {
   createPrimengNumberMatchModes,
   PrimeNgTableHeader,
   SkipLoadingSpinner
-} from 'primeng-table-state-helper';
+} from 'ngx-primeng-toolkit';
 
 // Example data models (based on the real usage)
 interface MachineProfile {

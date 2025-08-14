@@ -89,7 +89,7 @@ npm install zod
 import { Component, inject, viewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Table } from 'primeng/table';
-import { PrimeNgTableStateHelper } from 'ng-component-state-utils';
+import { PrimengPagedDataTableStateHelper } from 'ngx-primeng-toolkit';
 
 interface User {
   id: number;
@@ -189,7 +189,7 @@ import {
   createDropdownColumn,
   mergeTableHeaders,
   createStatusSelectItems
-} from 'primeng-table-state-helper';
+} from 'ngx-primeng-toolkit';
 
 @Component({
   // ... component configuration
@@ -486,7 +486,7 @@ export class AdvancedDataComponent {
 For scenarios where you only need basic pagination without filtering or sorting, use the `PrimengPagedDataTableStateHelper`:
 
 ```typescript
-import { PrimengPagedDataTableStateHelper } from 'primeng-table-state-helper';
+import { PrimengPagedDataTableStateHelper } from 'ngx-primeng-toolkit';
 
 interface Product {
   id: number;

@@ -1,28 +1,31 @@
-# PrimeNG Table State Helper - Developer Guide
+# NGX PrimeNG Toolkit - Developer Guide
 
-This guide provides detailed information for developers working on the PrimeNG Table State Helper library.
+This guide provides detailed information for developers working on the NGX PrimeNG Toolkit library.
 
 ## Project Structure
 
 ```
 src/
-├── index.ts                   # Main exports
-├── table-state-helper.ts      # Core table state management classes
-├── table-utils.ts             # Table configuration utilities
-├── memoized-data-storage.ts   # Memoized data storage class
-└── types.ts                   # Utility types and interfaces
+├── index.ts                      # Main exports
+├── component-data-storage.ts     # Component data storage utilities
+├── component-state.ts            # Component state management
+├── dynamic-table-state-helper.ts # Dynamic table state management
+├── http-context-tokens.ts        # HTTP context tokens
+├── memoized-data-storage.ts      # Memoized data storage class
+├── ng-select-helper.ts           # NgSelect helper utilities
+├── paged-table-state-helper.ts   # Simple paged table state
+├── table-state-helper.ts         # Core table state management classes
+├── table-utils.ts               # Table configuration utilities
+└── types.ts                     # Utility types and interfaces
 
-usage/                         # Example implementation files
-├── igmt4-process-data-bank-table.component.html
-└── igmt4-process-data-bank-table.component.ts
+examples/
+└── comprehensive-usage.example.ts # Complete usage examples
 
-example-usage.ts               # Table state examples
-example-usage-complete.ts      # Complete examples with all features
-README.md                      # User documentation
-DEVELOPER-GUIDE.md            # This file
-package.json                  # Package configuration
-tsconfig.json                 # TypeScript configuration
-tsup.config.ts                # Build configuration
+README.md                        # User documentation
+DEVELOPER-GUIDE.md              # This file
+package.json                    # Package configuration
+tsconfig.json                   # TypeScript configuration
+tsup.config.ts                  # Build configuration
 ```
 
 ## Architecture Overview
@@ -95,7 +98,7 @@ The helper expects a specific API contract:
 1. **Clone and Install**:
    ```bash
    git clone <repository-url>
-   cd primeng-table-state-helper
+   cd ngx-primeng-toolkit
    npm install
    ```
 
@@ -325,6 +328,114 @@ if (environment?.development) {
   console.log('Table state changed:', this.state());
 }
 ```
+
+## Version Management & Release Process
+
+This project uses automated semantic versioning based on commit message conventions. The GitHub Action automatically bumps versions and publishes to NPM based on your commit messages.
+
+### Commit Message Conventions
+
+The commit message format determines which version number gets bumped:
+
+#### Major Version (Breaking Changes)
+Use when you make incompatible API changes:
+
+```bash
+# Examples for MAJOR version bump (x.0.0)
+git commit -m "major: remove deprecated table-state-helper class"
+git commit -m "refactor: change PrimeNgTableState interface BREAKING CHANGE: removed isLoading property"
+git commit -m "feat: new table API BREAKING CHANGE: completely new table configuration format"
+```
+
+**Keywords that trigger major version bump:**
+- `major:` prefix
+- `BREAKING CHANGE:` in commit message body
+
+#### Minor Version (New Features)
+Use when you add functionality in a backward-compatible manner:
+
+```bash
+# Examples for MINOR version bump (x.y.0)
+git commit -m "feat: add new table column type support"
+git commit -m "feature: implement advanced filtering options"
+git commit -m "feat: add ng-select helper utilities"
+```
+
+**Keywords that trigger minor version bump:**
+- `feat:` prefix
+- `feature:` prefix
+
+#### Patch Version (Bug Fixes)
+Use when you make backward-compatible bug fixes:
+
+```bash
+# Examples for PATCH version bump (x.y.z)
+git commit -m "fix: resolve table state loading issue"
+git commit -m "patch: correct type definitions for table headers"
+git commit -m "bug: fix memory leak in memoized data storage"
+```
+
+**Keywords that trigger patch version bump:**
+- `fix:` prefix
+- `patch:` prefix
+- `bug:` prefix
+
+#### No Version Bump
+Other commit types won't trigger version bumps but are still good practice:
+
+```bash
+# These won't bump version but are recommended
+git commit -m "docs: update README examples"
+git commit -m "chore: update build dependencies"
+git commit -m "style: fix code formatting"
+git commit -m "test: add unit tests for table utils"
+git commit -m "refactor: improve code organization without breaking changes"
+```
+
+### Release Workflow
+
+1. **Make your changes** and test them locally
+2. **Commit with appropriate message** using the conventions above
+3. **Push to main branch** - this triggers the automated release process:
+   - GitHub Action runs tests and builds the package
+   - Analyzes your commit message to determine version bump type
+   - Updates `package.json` version automatically
+   - Publishes to NPM (if tests pass)
+   - Creates a Git tag for the new version
+   - Commits the version change back to the repository
+
+### Example Development Workflow
+
+```bash
+# Start working on a new feature
+git checkout -b feature/table-export
+
+# Make your changes and commit with proper message
+git commit -m "feat: add table data export functionality"
+
+# Push your feature branch and create PR
+git push origin feature/table-export
+
+# After PR is approved and merged to main, the release happens automatically
+# The system will bump minor version and publish to NPM
+```
+
+### Hotfix Workflow
+
+```bash
+# For urgent bug fixes
+git checkout -b hotfix/critical-bug
+
+# Fix the issue and commit
+git commit -m "fix: resolve critical memory leak in table state"
+
+# Push and merge to main for immediate patch release
+git push origin hotfix/critical-bug
+```
+
+### Version History
+
+Check the [releases page](https://github.com/saiful-70/ngx-primeng-toolkit/releases) to see version history and changelogs.
 
 ## Contributing
 
