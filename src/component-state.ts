@@ -1,14 +1,5 @@
 import { computed, signal } from "@angular/core";
-
-/**
- * Enumeration for manipulation types in component operations
- */
-export enum ManipulationType {
-  Create = "Create",
-  Update = "Update",
-  Delete = "Delete",
-  View = "View"
-}
+import { ManipulationType } from "./types";
 
 /**
  * A reactive state management class for Angular components using signals

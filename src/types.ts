@@ -2,8 +2,108 @@ import { FilterMetadata } from 'primeng/api';
 import { z } from 'zod';
 
 // ===============================================================================
+// TypeScript Utility Types
+// ===============================================================================
+
+/**
+ * Makes all properties of T nullable (T | null)
+ * @template T - The type to make nullable
+ * @example
+ * ```typescript
+ * type User = { id: number; name: string; email: string };
+ * type NullableUser = RecursiveNullable<User>;
+ * // Result: { id: number | null; name: string | null; email: string | null }
+ * ```
+ */
+export type RecursiveNullable<T> = {
+  [P in keyof T]: T[P] | null;
+};
+
+/**
+ * Represents a value that can be null or undefined
+ * @template T - The base type
+ * @example
+ * ```typescript
+ * type MaybeString = Nullish<string>; // string | null | undefined
+ * ```
+ */
+export type Nullish<T> = T | null | undefined;
+
+/**
+ * Makes all properties of T nullish (T | null | undefined) recursively
+ * @template T - The type to make nullish
+ * @example
+ * ```typescript
+ * type User = { id: number; profile: { name: string; age: number } };
+ * type NullishUser = RecursiveNullish<User>;
+ * // Result: { 
+ * //   id: number | null | undefined; 
+ * //   profile: { 
+ * //     name: string | null | undefined; 
+ * //     age: number | null | undefined 
+ * //   } | null | undefined 
+ * // }
+ * ```
+ */
+export type RecursiveNullish<T> = {
+  [P in keyof T]: T[P] extends object
+    ? RecursiveNullish<T[P]> | null | undefined
+    : T[P] | null | undefined;
+};
+
+/**
+ * Makes all properties optional recursively, useful for partial updates
+ * @template T - The type to make recursively partial
+ * @example
+ * ```typescript
+ * type User = { 
+ *   id: number; 
+ *   profile: { name: string; age: number }; 
+ *   settings: { theme: string; notifications: boolean } 
+ * };
+ * type PartialUser = RecursivePartial<User>;
+ * // Result: { 
+ * //   id?: number; 
+ * //   profile?: { name?: string; age?: number }; 
+ * //   settings?: { theme?: string; notifications?: boolean } 
+ * // }
+ * ```
+ */
+export type RecursivePartial<T> = {
+  [P in keyof T]?: T[P] extends object ? RecursivePartial<T[P]> : T[P];
+};
+
+// ===============================================================================
 // Core Data Types
 // ===============================================================================
+
+/**
+ * Enumeration for manipulation types in component operations
+ * Used for tracking the current operation state in component management
+ * 
+ * @example
+ * ```typescript
+ * // In a component
+ * currentOperation: ManipulationType = ManipulationType.Create;
+ * 
+ * // Check operation type
+ * if (this.currentOperation === ManipulationType.Update) {
+ *   // Handle update logic
+ * }
+ * ```
+ */
+export enum ManipulationType {
+  /** Creating a new item */
+  Create = "Create",
+  /** Updating an existing item */
+  Update = "Update", 
+  /** Creating a child item */
+  CreateChild = "Create Child",
+  /** Deleting an item */
+  Delete = "Delete",
+  /** Viewing item details */
+  View = "View"
+}
 
 /**
  * Key-value pair type for common data structures

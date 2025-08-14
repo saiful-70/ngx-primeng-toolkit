@@ -40,11 +40,17 @@ A comprehensive TypeScript utility library for Angular component state managemen
 - 🔍 **Search & Filter**: Built-in methods for finding and manipulating data
 - ⚡ **Performance**: Efficient data updates with minimal re-renders
 
+### 🛠️ Utility Functions & Types
+- **Object Utilities**: Helper functions for cleaning and processing objects
+- **TypeScript Types**: Advanced utility types for nullable and partial types
+- **Form Processing**: Utilities for handling form data and API payloads
+- **Type Safety**: Enhanced TypeScript support for complex object operations
+
 ### Additional Features
 - 📦 **Tree-shakeable**: Import only what you need
 - 🏗️ **Dual Helpers**: Dynamic table helper (with filtering) and simple paged table helper
 - 🛠️ **Utility Functions**: Column configuration and filter utilities
-- 🔒 **Type Safety**: Comprehensive TypeScript supporte State Helper
+- 🔒 **Type Safety**: Comprehensive TypeScript support
 
 A TypeScript utility library for advanced PrimeNG table state management in Angular applications, featuring lazy loading, filtering, sorting, and pagination with NgRx Signals integration.
 
@@ -1153,6 +1159,227 @@ const tableState = PrimeNgDynamicTableStateHelper.create<CustomUser>({
 });
 
 // tableState.data() is typed as Signal<CustomUser[]>
+```
+
+## Utility Functions & TypeScript Types
+
+The library includes general utility functions and TypeScript helper types for common development tasks.
+
+### Object Utilities
+
+#### cleanNullishFromObject
+
+Removes null and undefined values from an object, useful for cleaning query parameters before API calls.
+
+```typescript
+import { cleanNullishFromObject } from 'ngx-primeng-toolkit';
+
+// Basic usage
+const queryParams = {
+  name: 'John',
+  email: null,
+  age: undefined,
+  status: 'active',
+  department: ''
+};
+
+const cleaned = cleanNullishFromObject(queryParams);
+// Result: { name: 'John', status: 'active', department: '' }
+
+// With array values
+const filters = {
+  categories: ['tech', 'business'],
+  tags: null,
+  priority: undefined,
+  active: true
+};
+
+const cleanedFilters = cleanNullishFromObject(filters);
+// Result: { categories: ['tech', 'business'], active: true }
+
+// In component for API calls
+export class UserSearchComponent {
+  searchForm = new FormGroup({
+    name: new FormControl<string | null>(null),
+    email: new FormControl<string | null>(null),
+    department: new FormControl<string | null>(null)
+  });
+
+  async searchUsers() {
+    const searchParams = cleanNullishFromObject(this.searchForm.value);
+    
+    // Only sends non-null/undefined values to API
+    const users = await this.userService.searchUsers(searchParams);
+  }
+}
+```
+
+### TypeScript Utility Types
+
+The library provides several utility types for handling nullable and partial types:
+
+#### RecursiveNullable<T>
+
+Makes all properties of a type nullable (T | null):
+
+```typescript
+import { RecursiveNullable } from 'ngx-primeng-toolkit';
+
+type User = {
+  id: number;
+  name: string;
+  email: string;
+};
+
+type NullableUser = RecursiveNullable<User>;
+// Result: {
+//   id: number | null;
+//   name: string | null;
+//   email: string | null;
+// }
+
+// Useful for form models
+export class UserFormComponent {
+  userForm: FormGroup<{
+    [K in keyof User]: FormControl<RecursiveNullable<User>[K]>
+  }>;
+}
+```
+
+#### Nullish<T>
+
+Represents a value that can be null or undefined:
+
+```typescript
+import { Nullish } from 'ngx-primeng-toolkit';
+
+type MaybeString = Nullish<string>; // string | null | undefined
+type MaybeUser = Nullish<User>; // User | null | undefined
+
+// Useful for optional service responses
+export class UserService {
+  getCurrentUser(): Observable<Nullish<User>> {
+    // May return user, null, or undefined
+    return this.http.get<User>('/api/user/current')
+      .pipe(catchError(() => of(null)));
+  }
+}
+```
+
+#### RecursiveNullish<T>
+
+Makes all properties nullish (T | null | undefined) recursively:
+
+```typescript
+import { RecursiveNullish } from 'ngx-primeng-toolkit';
+
+type User = {
+  id: number;
+  profile: {
+    name: string;
+    age: number;
+  };
+};
+
+type NullishUser = RecursiveNullish<User>;
+// Result: {
+//   id: number | null | undefined;
+//   profile: {
+//     name: string | null | undefined;
+//     age: number | null | undefined;
+//   } | null | undefined;
+// }
+
+// Useful for deeply nullable form states
+export interface FormState extends RecursiveNullish<User> {}
+```
+
+#### RecursivePartial<T>
+
+Makes all properties optional recursively:
+
+```typescript
+import { RecursivePartial } from 'ngx-primeng-toolkit';
+
+type User = {
+  id: number;
+  profile: {
+    name: string;
+    age: number;
+  };
+  settings: {
+    theme: string;
+    notifications: boolean;
+  };
+};
+
+type PartialUser = RecursivePartial<User>;
+// Result: {
+//   id?: number;
+//   profile?: {
+//     name?: string;
+//     age?: number;
+//   };
+//   settings?: {
+//     theme?: string;
+//     notifications?: boolean;
+//   };
+// }
+
+// Perfect for update operations
+export class UserService {
+  updateUser(id: number, updates: RecursivePartial<User>) {
+    // Can update any subset of user properties
+    return this.http.patch<User>(`/api/users/${id}`, updates);
+  }
+}
+
+// Usage in components
+export class UserProfileComponent {
+  updateProfile() {
+    const updates: RecursivePartial<User> = {
+      profile: {
+        name: 'New Name' // Only updating name, age is optional
+      }
+      // settings and id are completely optional
+    };
+    
+    this.userService.updateUser(this.userId, updates);
+  }
+}
+```
+
+### Combining Utilities
+
+These utilities work great together for complex form and API scenarios:
+
+```typescript
+import { 
+  cleanNullishFromObject, 
+  RecursivePartial, 
+  RecursiveNullish 
+} from 'ngx-primeng-toolkit';
+
+export class AdvancedFormComponent {
+  // Form model with nullable fields
+  formModel: RecursiveNullish<User> = {
+    id: null,
+    profile: {
+      name: null,
+      age: undefined
+    }
+  };
+
+  // Update with partial data
+  updateUser(updates: RecursivePartial<User>) {
+    // Clean nullish values before sending to API
+    const cleanUpdates = cleanNullishFromObject(updates);
+    
+    if (Object.keys(cleanUpdates).length > 0) {
+      this.userService.updateUser(this.userId, cleanUpdates);
+    }
+  }
+}
 ```
 
 ## License

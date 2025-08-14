@@ -36,7 +36,8 @@ import {
   createPrimengStringMatchModes,
   createPrimengNumberMatchModes,
   PrimeNgTableHeader,
-  SkipLoadingSpinner
+  SkipLoadingSpinner,
+  ManipulationType
 } from 'ngx-primeng-toolkit';
 
 // Example data models (based on the real usage)
@@ -515,14 +516,14 @@ export class MachineProfileExampleComponent implements OnInit {
   // Dialog management methods
   openCreateDialog() {
     this.componentState.isCreateOrUpdateDialogOpen.set(true);
-    this.componentState.updateManipulationType('Create');
+    this.componentState.updateManipulationType(ManipulationType.Create);
     this.form.reset();
   }
 
   async openUpdateDialog(entity: MachineProfile) {
     this.componentData.singleData.set(entity);
     this.componentState.isCreateOrUpdateDialogOpen.set(true);
-    this.componentState.updateManipulationType('Update');
+    this.componentState.updateManipulationType(ManipulationType.Update);
     
     // Populate form with entity data
     this.form.patchValue({
