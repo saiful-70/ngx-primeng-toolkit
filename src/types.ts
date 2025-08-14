@@ -1,0 +1,336 @@
+import { FilterMetadata } from 'primeng/api';
+import { z } from 'zod';
+
+// ===============================================================================
+// Core Data Types
+// ===============================================================================
+
+/**
+ * Key-value pair type for common data structures
+ * @template K The type of the key
+ * @template V The type of the value
+ */
+export interface KeyData<K, V> {
+  key: K;
+  value: V;
+}
+
+/**
+ * Common API response wrapper type
+ * @template T The type of the data payload
+ */
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  status: number;
+  success: boolean;
+}
+
+/**
+ * Pagination metadata interface
+ */
+export interface PaginationMeta {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+/**
+ * Paginated response type
+ * @template T The type of the data items
+ */
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: PaginationMeta;
+}
+
+/**
+ * Query parameters for pagination
+ */
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  offset?: number;
+}
+
+/**
+ * Common sort parameters
+ */
+export interface SortParams {
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+/**
+ * Combined query parameters for API requests
+ */
+export type QueryParams = Record<string, string | number | boolean> & 
+  Partial<PaginationParams> & 
+  Partial<SortParams>;
+
+// ===============================================================================
+// Table State Types
+// ===============================================================================
+
+/**
+ * String filter types for PrimeNG table filtering
+ */
+export type StringFilterType =
+  | "startsWith"
+  | "notStartsWith"
+  | "endsWith"
+  | "notEndsWith"
+  | "contains"
+  | "notContains";
+
+/**
+ * Numeric filter types for PrimeNG table filtering
+ */
+export type NumericFilterType =
+  | "equals"
+  | "notEquals"
+  | "greaterThan"
+  | "lessThan"
+  | "greaterThanOrEqual"
+  | "lessThanOrEqual";
+
+/**
+ * Boolean filter types for PrimeNG table filtering
+ */
+export type BooleanFilterType = Extract<NumericFilterType, "equals" | "notEquals">;
+
+/**
+ * Combined filter types
+ */
+export type FilterType = StringFilterType | NumericFilterType;
+
+/**
+ * Filter type mappings for backend API
+ */
+export type FilterTypeMapped =
+  | "starts"
+  | "!starts"
+  | "ends"
+  | "!ends"
+  | "like"
+  | "!like"
+  | "="
+  | "!="
+  | ">"
+  | "<"
+  | ">="
+  | "<=";
+
+/**
+ * PrimeNG table header configuration interface
+ */
+export interface PrimeNgTableHeader {
+  identifier: {
+    label?: string;
+    field: string;
+    hasSort?: boolean;
+    isBoolean?: boolean;
+    styleClass?: Record<string, string>;
+  };
+  filter?: {
+    type: "text" | "numeric" | "boolean" | "date" | "dropdown" | "multiselect";
+    placeholder?: string;
+    matchModeOptions?: any[];
+    defaultMatchMode: FilterType;
+    ariaLabel?: string;
+    colspan?: number;
+    styleClass?: Record<string, string>;
+  };
+}
+
+/**
+ * Dynamic query DTO interface
+ */
+export interface DynamicQueryDto {
+  size: number;
+  page: number;
+  filter: DynamicQueryFilterDto[];
+  sort: DynamicQuerySortDto[];
+}
+
+/**
+ * Filter DTO for dynamic queries
+ */
+export interface DynamicQueryFilterDto {
+  field: string;
+  value: string;
+  type: FilterTypeMapped;
+}
+
+/**
+ * Sort DTO for dynamic queries
+ */
+export interface DynamicQuerySortDto {
+  field: string;
+  dir: "asc" | "desc";
+}
+
+/**
+ * Paged data response interface
+ */
+export interface PagedDataResponse<T> {
+  data: T[];
+  last_page: number;
+  last_row: number;
+}
+
+/**
+ * Paged data response interface for simple pagination
+ */
+export interface SimplePagedDataResponse<T> {
+  payload: T[];
+  totalCount: number;
+}
+
+/**
+ * Internal table state interface for dynamic table
+ */
+export interface PrimeNgTableState<T> {
+  data: Array<T>;
+  isLoading: boolean;
+  size: number;
+  page: number;
+  totalRecords: number;
+  filter: DynamicQueryFilterDto[];
+  sort: DynamicQuerySortDto[];
+}
+
+/**
+ * Internal state interface for paged table
+ */
+export interface PrimeNgPagedTableState<T> {
+  data: Array<T>;
+  isLoading: boolean;
+  totalRecords: number;
+  limit: number;
+  page: number;
+}
+
+/**
+ * Query DTO interface for paged data requests
+ */
+export interface PagedDataQueryDto {
+  limit: number;
+  page: number;
+}
+
+/**
+ * Query parameters type for additional HTTP request parameters
+ */
+export type PrimeNgTableStateHelperQueryParam = Record<string, string | number | boolean>;
+
+// ===============================================================================
+// Zod Schemas
+// ===============================================================================
+
+/**
+ * Zod schema for dynamic query response validation
+ */
+export const dynamicQueryResponseZodSchema = z.object({
+  data: z.any().array(),
+  last_page: z.number(),
+  last_row: z.number()
+});
+
+/**
+ * Zod schema for paged data response validation
+ */
+export const PagedDataResponseZodSchema = z.object({
+  payload: z.any().array(),
+  totalCount: z.number()
+});
+
+// ===============================================================================
+// Utility Functions and Type Guards
+// ===============================================================================
+
+/**
+ * Error response interface
+ */
+export interface ErrorResponse {
+  error: string;
+  message: string;
+  statusCode: number;
+  timestamp: string;
+}
+
+/**
+ * Creates a key-value pair object
+ * @param key The key value
+ * @param value The value
+ * @returns KeyData object
+ */
+export function createKeyData<K, V>(key: K, value: V): KeyData<K, V> {
+  return { key, value };
+}
+
+/**
+ * Type guard to check if a response is an API response
+ * @param response The response to check
+ * @returns true if response is ApiResponse, false otherwise
+ */
+export function isApiResponse<T>(response: any): response is ApiResponse<T> {
+  return (
+    typeof response === 'object' &&
+    response !== null &&
+    'data' in response &&
+    'status' in response &&
+    'success' in response
+  );
+}
+
+/**
+ * Type guard to check if a response is paginated
+ * @param response The response to check
+ * @returns true if response is PaginatedResponse, false otherwise
+ */
+export function isPaginatedResponse<T>(response: any): response is PaginatedResponse<T> {
+  return (
+    typeof response === 'object' &&
+    response !== null &&
+    'data' in response &&
+    Array.isArray(response.data) &&
+    'meta' in response &&
+    typeof response.meta === 'object'
+  );
+}
+
+/**
+ * Type guard to check if a response is a simple paged response
+ * @param response The response to check
+ * @returns true if response is SimplePagedDataResponse, false otherwise
+ */
+export function isSimplePagedResponse<T>(response: any): response is SimplePagedDataResponse<T> {
+  return (
+    typeof response === 'object' &&
+    response !== null &&
+    'payload' in response &&
+    Array.isArray(response.payload) &&
+    'totalCount' in response &&
+    typeof response.totalCount === 'number'
+  );
+}
+
+/**
+ * Type guard to check if a response is a dynamic query response
+ * @param response The response to check
+ * @returns true if response is PagedDataResponse, false otherwise
+ */
+export function isDynamicQueryResponse<T>(response: any): response is PagedDataResponse<T> {
+  return (
+    typeof response === 'object' &&
+    response !== null &&
+    'data' in response &&
+    Array.isArray(response.data) &&
+    'last_page' in response &&
+    'last_row' in response
+  );
+}
