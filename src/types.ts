@@ -108,11 +108,11 @@ export enum ManipulationType {
 /**
  * Key-value pair type for common data structures
  * @template K The type of the key
- * @template V The type of the value
+ * @template D The type of the data
  */
-export interface KeyData<K, V> {
+export interface KeyData<K, D> {
   key: K;
-  value: V;
+  data: D;
 }
 
 /**
@@ -365,11 +365,11 @@ export interface ErrorResponse {
 /**
  * Creates a key-value pair object
  * @param key The key value
- * @param value The value
+ * @param data The data value
  * @returns KeyData object
  */
-export function createKeyData<K, V>(key: K, value: V): KeyData<K, V> {
-  return { key, value };
+export function createKeyData<K, D>(key: K, data: D): KeyData<K, D> {
+  return { key, data };
 }
 
 /**
