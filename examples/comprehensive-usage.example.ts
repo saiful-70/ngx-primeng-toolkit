@@ -17,7 +17,7 @@ import { Component, inject, OnInit, viewChild, signal, computed, input } from '@
 import { HttpClient } from '@angular/common/http';
 import { FormBuilder, Validators } from '@angular/forms';
 import { DestroyRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Table } from 'primeng/table';
 
 // Import all helper classes and utilities
@@ -28,6 +28,7 @@ import {
   ComponentDataStorage,
   ComponentState,
   NgSelectHelper,
+  initNgSelect,
   createTextColumn,
   createNumericColumn,
   createBooleanColumn,
@@ -340,6 +341,15 @@ export class MachineProfileExampleComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 
+  // Mock toast service for error handling in the example
+  private readonly toastService = {
+    showAjaxErrorToast: (err: Error) => {
+      console.error('NgSelect AJAX Error:', err);
+      // In real implementation, you would show actual toast notifications
+      // this.messageService.add({ severity: 'error', summary: 'Error', detail: err.message });
+    }
+  };
+
   // Input properties
   readonly selectedMachineSpec = input.required<MachineSpec>();
 
@@ -369,7 +379,10 @@ export class MachineProfileExampleComponent implements OnInit {
   readonly floorOptionsHelper = new NgSelectHelper<KeyData<number, string>>(
     '/api/shared/floors',
     this.httpClient,
-    this.destroyRef
+    this.destroyRef,
+    false, // requiresSearch
+    50,    // pageSize
+    false  // isLazyLoad
   );
 
   readonly lineOptionsHelper = new NgSelectHelper<KeyData<number, string>>(
@@ -380,6 +393,12 @@ export class MachineProfileExampleComponent implements OnInit {
     50,    // pageSize
     false  // isLazyLoad
   );
+
+  // Signal containing all NgSelect helpers for centralized initialization
+  readonly ngSelectHelpers = signal([
+    this.floorOptionsHelper,
+    this.lineOptionsHelper
+  ]);
 
   // Filter match modes for PrimeNG table
   readonly stringMatchModes = createPrimengStringMatchModes();
@@ -457,6 +476,15 @@ export class MachineProfileExampleComponent implements OnInit {
   readonly hasCreateOrUpdatePermission = computed(() => 
     this.hasCreatePermission() || this.hasUpdatePermission()
   );
+
+  constructor() {
+    // Initialize NgSelect helpers with centralized error handling
+    initNgSelect(
+      toObservable(this.ngSelectHelpers),
+      this.destroyRef,
+      (err) => this.toastService.showAjaxErrorToast(err)
+    );
+  }
 
   ngOnInit() {
     // Set route parameter for the table

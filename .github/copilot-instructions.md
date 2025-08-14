@@ -21,6 +21,8 @@ This is a TypeScript npm package for advanced PrimeNG table state management in 
 ## Architecture Patterns
 - Dynamic table state management in `src/dynamic-table-state-helper.ts`
 - Simple paged table utilities in `src/paged-table-state-helper.ts`
+- NgSelect helper utilities in `src/ng-select-helper.ts`
+- NgSelect initialization utilities in `src/ng-select-utils.ts`
 - Table configuration utilities in `src/table-utils.ts`
 - Main exports in `src/index.ts`
 - Tree-shakeable exports for optimal bundle size

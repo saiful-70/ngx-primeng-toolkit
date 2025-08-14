@@ -20,5 +20,8 @@ export * from './component-data-storage';
 // Export ng-select helper
 export * from './ng-select-helper';
 
+// Export ng-select utilities
+export * from './ng-select-utils';
+
 // Export all types and interfaces
 export * from './types';

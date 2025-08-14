@@ -13,6 +13,7 @@ src/
 ├── http-context-tokens.ts        # HTTP context tokens
 ├── memoized-data-storage.ts      # Memoized data storage class
 ├── ng-select-helper.ts           # NgSelect helper utilities
+├── ng-select-utils.ts            # NgSelect initialization utilities
 ├── paged-table-state-helper.ts   # Simple paged table state
 ├── table-utils.ts               # Table configuration utilities
 └── types.ts                     # Utility types and interfaces

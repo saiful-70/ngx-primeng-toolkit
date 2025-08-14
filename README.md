@@ -780,7 +780,91 @@ export class AdvancedDataManagementComponent {
 }
 ```
 
-## NgSelectHelper
+## NgSelect Helper with Centralized Initialization
+
+The library provides an `initNgSelect` utility function for streamlined initialization of multiple NgSelect helpers with centralized error handling.
+
+### Recommended Usage Pattern
+
+```typescript
+import { Component, inject, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { HttpClient } from '@angular/common/http';
+import { DestroyRef } from '@angular/core';
+import { NgSelectHelper, initNgSelect } from 'ngx-primeng-toolkit';
+
+interface KeyData<K, V> {
+  key: K;
+  data: V;
+}
+
+@Component({
+  selector: 'app-select-example'
+})
+export class SelectExampleComponent {
+  private readonly httpClient = inject(HttpClient);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly toastService = inject(ToastService); // Your toast service
+
+  // Define NgSelect helpers
+  readonly floorOptionsHelper = new NgSelectHelper<KeyData<number, string>>(
+    '/api/shared/floors',
+    this.httpClient,
+    this.destroyRef,
+    false, // usePostRequest
+    50,    // limit (page size)
+    false  // useCache
+  );
+
+  readonly lineOptionsHelper = new NgSelectHelper<KeyData<number, string>>(
+    '/api/shared/lines',
+    this.httpClient,
+    this.destroyRef,
+    false, // usePostRequest
+    50,    // limit
+    false  // useCache
+  );
+
+  // Centralized helper management
+  readonly ngSelectHelpers = signal([
+    this.floorOptionsHelper,
+    this.lineOptionsHelper
+  ]);
+
+  constructor() {
+    // Initialize all NgSelect helpers with error handling
+    initNgSelect(
+      toObservable(this.ngSelectHelpers),
+      this.destroyRef,
+      (err) => this.toastService.showAjaxErrorToast(err)
+    );
+  }
+}
+```
+
+### Benefits of Centralized Initialization
+
+1. **Single Point of Error Handling**: All NgSelect errors are handled consistently
+2. **Automatic Cleanup**: Uses `takeUntilDestroyed` for proper subscription cleanup
+3. **Lazy Initialization**: Only initializes helpers that haven't been initialized yet
+4. **Type Safety**: Full TypeScript support with proper type inference
+
+### initNgSelect Function API
+
+```typescript
+function initNgSelect(
+  helpers$: Observable<NgSelectHelper<unknown>[]>,
+  destroyRef: DestroyRef,
+  onAjaxError: (err: Error) => void
+): void
+```
+
+**Parameters:**
+- `helpers$`: Observable of NgSelectHelper instances (typically from `toObservable(signal)`)
+- `destroyRef`: Angular DestroyRef for automatic subscription cleanup
+- `onAjaxError`: Callback function to handle AJAX errors from any helper
+
+## NgSelectHelper (Individual Usage)
 
 The `NgSelectHelper` class provides comprehensive state management for ng-select components with features like pagination, search, caching, and error handling.
 
