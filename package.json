@@ -1,6 +1,6 @@
 {
   "name": "ngx-primeng-toolkit",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "A comprehensive TypeScript utility library for Angular component state management, PrimeNG table state management, ng-select helpers, data storage, and memoized HTTP caching",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
