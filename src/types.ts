@@ -233,7 +233,7 @@ export interface PrimeNgTableHeader {
     field: string;
     hasSort?: boolean;
     isBoolean?: boolean;
-    styleClass?: Record<string, string>;
+    styleClass?: string;
   };
   filter?: {
     type: "text" | "numeric" | "boolean" | "date" | "dropdown" | "multiselect";

@@ -133,7 +133,7 @@ export function createTextColumn(
     placeholder?: string;
     matchModeOptions?: SelectItem<StringFilterType>[];
     defaultMatchMode?: StringFilterType;
-    styleClass?: Record<string, string>;
+    styleClass?: string;
     filterStyleClass?: Record<string, string>;
   } = {}
 ): PrimeNgTableHeader {
@@ -176,7 +176,7 @@ export function createNumericColumn(
     placeholder?: string;
     matchModeOptions?: SelectItem<NumericFilterType>[];
     defaultMatchMode?: NumericFilterType;
-    styleClass?: Record<string, string>;
+    styleClass?: string;
     filterStyleClass?: Record<string, string>;
   } = {}
 ): PrimeNgTableHeader {
@@ -216,7 +216,7 @@ export function createBooleanColumn(
   options: {
     hasSort?: boolean;
     hasFilter?: boolean;
-    styleClass?: Record<string, string>;
+    styleClass?: string;
     filterStyleClass?: Record<string, string>;
   } = {}
 ): PrimeNgTableHeader {
@@ -256,7 +256,7 @@ export function createDateColumn(
     hasSort?: boolean;
     hasFilter?: boolean;
     placeholder?: string;
-    styleClass?: Record<string, string>;
+    styleClass?: string;
     filterStyleClass?: Record<string, string>;
   } = {}
 ): PrimeNgTableHeader {
@@ -298,7 +298,7 @@ export function createDropdownColumn(
     hasSort?: boolean;
     hasFilter?: boolean;
     placeholder?: string;
-    styleClass?: Record<string, string>;
+    styleClass?: string;
     filterStyleClass?: Record<string, string>;
   } = {}
 ): PrimeNgTableHeader {
@@ -341,7 +341,7 @@ export function createMultiselectColumn(
     hasSort?: boolean;
     hasFilter?: boolean;
     placeholder?: string;
-    styleClass?: Record<string, string>;
+    styleClass?: string;
     filterStyleClass?: Record<string, string>;
   } = {}
 ): PrimeNgTableHeader {
@@ -380,7 +380,7 @@ export function createSimpleColumn(
   label: string,
   options: {
     hasSort?: boolean;
-    styleClass?: Record<string, string>;
+    styleClass?: string;
   } = {}
 ): PrimeNgTableHeader {
   return {
