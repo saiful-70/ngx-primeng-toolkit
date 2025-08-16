@@ -129,6 +129,7 @@ export function createTextColumn(
   label: string,
   options: {
     hasSort?: boolean;
+    hasFilter?: boolean;
     placeholder?: string;
     matchModeOptions?: SelectItem<StringFilterType>[];
     defaultMatchMode?: StringFilterType;
@@ -136,22 +137,27 @@ export function createTextColumn(
     filterStyleClass?: Record<string, string>;
   } = {}
 ): PrimeNgTableHeader {
-  return {
+  const header: PrimeNgTableHeader = {
     identifier: {
       label,
       field,
-      hasSort: options.hasSort ?? true,
+      hasSort: options.hasSort ?? false,
       styleClass: options.styleClass
-    },
-    filter: {
+    }
+  };
+
+  if (options.hasFilter ?? false) {
+    header.filter = {
       type: "text",
       placeholder: options.placeholder ?? `Search by ${label.toLowerCase()}`,
       matchModeOptions: options.matchModeOptions ?? createPrimengStringMatchModes(),
       defaultMatchMode: options.defaultMatchMode ?? "contains",
       ariaLabel: `Filter by ${label}`,
       styleClass: options.filterStyleClass
-    }
-  };
+    };
+  }
+
+  return header;
 }
 
 /**
@@ -166,6 +172,7 @@ export function createNumericColumn(
   label: string,
   options: {
     hasSort?: boolean;
+    hasFilter?: boolean;
     placeholder?: string;
     matchModeOptions?: SelectItem<NumericFilterType>[];
     defaultMatchMode?: NumericFilterType;
@@ -173,22 +180,27 @@ export function createNumericColumn(
     filterStyleClass?: Record<string, string>;
   } = {}
 ): PrimeNgTableHeader {
-  return {
+  const header: PrimeNgTableHeader = {
     identifier: {
       label,
       field,
-      hasSort: options.hasSort ?? true,
+      hasSort: options.hasSort ?? false,
       styleClass: options.styleClass
-    },
-    filter: {
+    }
+  };
+
+  if (options.hasFilter ?? false) {
+    header.filter = {
       type: "numeric",
       placeholder: options.placeholder ?? `Filter by ${label.toLowerCase()}`,
       matchModeOptions: options.matchModeOptions ?? createPrimengNumberMatchModes(),
       defaultMatchMode: options.defaultMatchMode ?? "equals",
       ariaLabel: `Filter by ${label}`,
       styleClass: options.filterStyleClass
-    }
-  };
+    };
+  }
+
+  return header;
 }
 
 /**
@@ -203,25 +215,31 @@ export function createBooleanColumn(
   label: string,
   options: {
     hasSort?: boolean;
+    hasFilter?: boolean;
     styleClass?: Record<string, string>;
     filterStyleClass?: Record<string, string>;
   } = {}
 ): PrimeNgTableHeader {
-  return {
+  const header: PrimeNgTableHeader = {
     identifier: {
       label,
       field,
-      hasSort: options.hasSort ?? true,
+      hasSort: options.hasSort ?? false,
       isBoolean: true,
       styleClass: options.styleClass
-    },
-    filter: {
+    }
+  };
+
+  if (options.hasFilter ?? false) {
+    header.filter = {
       type: "boolean",
       defaultMatchMode: "equals",
       ariaLabel: `Filter by ${label}`,
       styleClass: options.filterStyleClass
-    }
-  };
+    };
+  }
+
+  return header;
 }
 
 /**
@@ -236,26 +254,32 @@ export function createDateColumn(
   label: string,
   options: {
     hasSort?: boolean;
+    hasFilter?: boolean;
     placeholder?: string;
     styleClass?: Record<string, string>;
     filterStyleClass?: Record<string, string>;
   } = {}
 ): PrimeNgTableHeader {
-  return {
+  const header: PrimeNgTableHeader = {
     identifier: {
       label,
       field,
-      hasSort: options.hasSort ?? true,
+      hasSort: options.hasSort ?? false,
       styleClass: options.styleClass
-    },
-    filter: {
+    }
+  };
+
+  if (options.hasFilter ?? false) {
+    header.filter = {
       type: "date",
       placeholder: options.placeholder ?? `Select ${label.toLowerCase()}`,
       defaultMatchMode: "equals",
       ariaLabel: `Filter by ${label}`,
       styleClass: options.filterStyleClass
-    }
-  };
+    };
+  }
+
+  return header;
 }
 
 /**
@@ -272,27 +296,33 @@ export function createDropdownColumn(
   dropdownOptions: SelectItem[],
   options: {
     hasSort?: boolean;
+    hasFilter?: boolean;
     placeholder?: string;
     styleClass?: Record<string, string>;
     filterStyleClass?: Record<string, string>;
   } = {}
 ): PrimeNgTableHeader {
-  return {
+  const header: PrimeNgTableHeader = {
     identifier: {
       label,
       field,
-      hasSort: options.hasSort ?? true,
+      hasSort: options.hasSort ?? false,
       styleClass: options.styleClass
-    },
-    filter: {
+    }
+  };
+
+  if (options.hasFilter ?? false) {
+    header.filter = {
       type: "dropdown",
       placeholder: options.placeholder ?? `Select ${label.toLowerCase()}`,
       matchModeOptions: dropdownOptions,
       defaultMatchMode: "equals",
       ariaLabel: `Filter by ${label}`,
       styleClass: options.filterStyleClass
-    }
-  };
+    };
+  }
+
+  return header;
 }
 
 /**
@@ -309,27 +339,33 @@ export function createMultiselectColumn(
   multiselectOptions: SelectItem[],
   options: {
     hasSort?: boolean;
+    hasFilter?: boolean;
     placeholder?: string;
     styleClass?: Record<string, string>;
     filterStyleClass?: Record<string, string>;
   } = {}
 ): PrimeNgTableHeader {
-  return {
+  const header: PrimeNgTableHeader = {
     identifier: {
       label,
       field,
-      hasSort: options.hasSort ?? true,
+      hasSort: options.hasSort ?? false,
       styleClass: options.styleClass
-    },
-    filter: {
+    }
+  };
+
+  if (options.hasFilter ?? false) {
+    header.filter = {
       type: "multiselect",
       placeholder: options.placeholder ?? `Select ${label.toLowerCase()}`,
       matchModeOptions: multiselectOptions,
       defaultMatchMode: "equals",
       ariaLabel: `Filter by ${label}`,
       styleClass: options.filterStyleClass
-    }
-  };
+    };
+  }
+
+  return header;
 }
 
 /**
