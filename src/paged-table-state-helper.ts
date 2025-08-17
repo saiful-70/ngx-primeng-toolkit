@@ -32,6 +32,7 @@ function initialPagedState<T>(): PrimeNgPagedTableState<T> {
 type PrimeNgPagedTableStateOpts = {
   url: string;
   httpClient: HttpClient;
+  skipLoadingSpinner?: boolean;
 };
 
 /**
@@ -66,6 +67,7 @@ type PrimeNgPagedTableStateOpts = {
 export class PrimengPagedDataTableStateHelper<T> {
   readonly #state = signalState<PrimeNgPagedTableState<T>>(initialPagedState<T>());
   private urlWithOutRouteParam: string;
+  private skipLoadingSpinner: boolean;
   readonly #uniqueKey = signal("id");
   readonly uniqueKey = this.#uniqueKey.asReadonly();
   #queryParams: PrimeNgTableStateHelperQueryParam = {};
@@ -79,9 +81,11 @@ export class PrimengPagedDataTableStateHelper<T> {
 
   private constructor(
     private url: string,
-    private readonly httpClient: HttpClient
+    private readonly httpClient: HttpClient,
+    skipLoadingSpinner: boolean = true
   ) {
     this.urlWithOutRouteParam = url;
+    this.skipLoadingSpinner = skipLoadingSpinner;
   }
 
   /**
@@ -90,7 +94,7 @@ export class PrimengPagedDataTableStateHelper<T> {
    * @returns New instance of PrimengPagedDataTableStateHelper
    */
   public static create<T>(option: PrimeNgPagedTableStateOpts): PrimengPagedDataTableStateHelper<T> {
-    return new PrimengPagedDataTableStateHelper<T>(option.url, option.httpClient);
+    return new PrimengPagedDataTableStateHelper<T>(option.url, option.httpClient, option.skipLoadingSpinner ?? true);
   }
 
   /**
@@ -101,7 +105,17 @@ export class PrimengPagedDataTableStateHelper<T> {
   public static createWithBlankUrl<T>(
     option: Omit<PrimeNgPagedTableStateOpts, "url">
   ): PrimengPagedDataTableStateHelper<T> {
-    return new PrimengPagedDataTableStateHelper<T>("", option.httpClient);
+    return new PrimengPagedDataTableStateHelper<T>("", option.httpClient, option.skipLoadingSpinner ?? true);
+  }
+
+  /**
+   * Sets whether to skip the loading spinner
+   * @param skip - Whether to skip the loading spinner
+   * @returns This instance for method chaining
+   */
+  public setSkipLoadingSpinner(skip: boolean): this {
+    this.skipLoadingSpinner = skip;
+    return this;
   }
 
   /**
@@ -222,7 +236,10 @@ export class PrimengPagedDataTableStateHelper<T> {
     try {
       patchState(this.#state, { isLoading: true });
 
-      const context = new HttpContext().set(SkipLoadingSpinner, true);
+      const context = new HttpContext();
+      if (this.skipLoadingSpinner) {
+        context.set(SkipLoadingSpinner, true);
+      }
 
       const params = new URLSearchParams();
       Object.entries(this.#queryParams).forEach(([key, value]) => {

@@ -38,7 +38,7 @@ function initialDynamicState<T>(): PrimeNgTableState<T> {
 type PrimeNgDynamicTableStateOpts = {
   url: string;
   httpClient: HttpClient;
-  skipLoadingSpinnerContext?: any;
+  skipLoadingSpinner?: boolean;
 };
 
 /**
@@ -72,7 +72,7 @@ type PrimeNgDynamicTableStateOpts = {
 export class PrimeNgDynamicTableStateHelper<T> {
   private readonly state = signalState<PrimeNgTableState<T>>(initialDynamicState<T>());
   private urlWithOutRouteParam: string;
-  private skipLoadingSpinnerContext?: any;
+  private skipLoadingSpinner: boolean;
   readonly #uniqueKey = signal("id");
   readonly uniqueKey = this.#uniqueKey.asReadonly();
   #queryParams: PrimeNgTableStateHelperQueryParam = {};
@@ -85,10 +85,10 @@ export class PrimeNgDynamicTableStateHelper<T> {
   private constructor(
     private url: string,
     private readonly httpClient: HttpClient,
-    skipLoadingSpinnerContext?: any
+    skipLoadingSpinner: boolean = true
   ) {
     this.urlWithOutRouteParam = url;
-    this.skipLoadingSpinnerContext = skipLoadingSpinnerContext;
+    this.skipLoadingSpinner = skipLoadingSpinner;
   }
 
   /**
@@ -100,8 +100,18 @@ export class PrimeNgDynamicTableStateHelper<T> {
     return new PrimeNgDynamicTableStateHelper<T>(
       options.url,
       options.httpClient,
-      options.skipLoadingSpinnerContext
+      options.skipLoadingSpinner ?? true
     );
+  }
+
+  /**
+   * Sets whether to skip the loading spinner
+   * @param skip - Whether to skip the loading spinner
+   * @returns This instance for method chaining
+   */
+  public setSkipLoadingSpinner(skip: boolean): this {
+    this.skipLoadingSpinner = skip;
+    return this;
   }
 
   /**
@@ -225,7 +235,7 @@ export class PrimeNgDynamicTableStateHelper<T> {
       patchState(this.state, { isLoading: true });
 
       const context = new HttpContext();
-      if (this.skipLoadingSpinnerContext) {
+      if (this.skipLoadingSpinner) {
         context.set(SkipLoadingSpinner, true);
       }
 

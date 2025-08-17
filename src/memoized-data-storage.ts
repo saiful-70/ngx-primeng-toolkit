@@ -23,13 +23,26 @@ import { SkipLoadingSpinner } from "./http-context-tokens";
  * ```
  */
 export class MemoizedDataStorage<T> {
+  private skipLoadingSpinner: boolean = true;
+
   /**
    * Creates a new instance of MemoizedDataStorage
    * @param httpClient Angular HttpClient instance for making HTTP requests
+   * @param skipLoadingSpinner Whether to skip the loading spinner for HTTP requests
    */
-  constructor(readonly httpClient: HttpClient) {}
+  constructor(readonly httpClient: HttpClient, skipLoadingSpinner: boolean = true) {
+    this.skipLoadingSpinner = skipLoadingSpinner;
+  }
 
-  // Private signals for internal state management
+  /**
+   * Sets whether to skip the loading spinner for HTTP requests
+   * @param skip Whether to skip the loading spinner
+   * @returns This instance for method chaining
+   */
+  setSkipLoadingSpinner(skip: boolean): this {
+    this.skipLoadingSpinner = skip;
+    return this;
+  }
   readonly #singleData = signal<T | null>(null);
   readonly #multipleData = signal<Array<T>>([]);
   readonly #isLoading = signal<boolean>(false);
@@ -100,10 +113,16 @@ export class MemoizedDataStorage<T> {
 
     try {
       this.#isLoading.set(true);
+      
+      const context = new HttpContext();
+      if (this.skipLoadingSpinner) {
+        context.set(SkipLoadingSpinner, true);
+      }
+
       const data = await firstValueFrom(
         this.httpClient.get<T>(url, {
           params: queryParams,
-          context: new HttpContext().set(SkipLoadingSpinner, true)
+          context
         })
       );
       this.#singleData.set(data);
@@ -146,10 +165,16 @@ export class MemoizedDataStorage<T> {
 
     try {
       this.#isLoading.set(true);
+      
+      const context = new HttpContext();
+      if (this.skipLoadingSpinner) {
+        context.set(SkipLoadingSpinner, true);
+      }
+
       const data = await firstValueFrom(
         this.httpClient.get<Array<T>>(url, {
           params: queryParams,
-          context: new HttpContext().set(SkipLoadingSpinner, true)
+          context
         })
       );
       this.#multipleData.set(Array.isArray(data) ? data : []);
