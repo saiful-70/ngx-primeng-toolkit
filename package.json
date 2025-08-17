@@ -61,8 +61,8 @@
     "url": "https://github.com/saiful-70/ngx-primeng-toolkit/issues"
   },
   "devDependencies": {
-    "@angular/common": "^20.1.7",
-    "@angular/core": "^20.1.7",
+    "@angular/common": "^20.1.4",
+    "@angular/core": "^20.1.4",
     "@ngrx/signals": "^20.0.0",
     "@types/node": "^24.1.0",
     "primeng": "^20.0.1",
