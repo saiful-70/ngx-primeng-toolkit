@@ -1,4 +1,4 @@
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpContextToken } from '@angular/common/http';
 import { signal, Signal } from '@angular/core';
 import { signalState, patchState } from '@ngrx/signals';
 import { FilterMetadata } from 'primeng/api';
@@ -38,7 +38,7 @@ function initialDynamicState<T>(): PrimeNgTableState<T> {
 type PrimeNgDynamicTableStateOpts = {
   url: string;
   httpClient: HttpClient;
-  skipLoadingSpinnerContext?: any;
+  skipLoadingSpinnerContext?: HttpContextToken<boolean>;
 };
 
 /**
@@ -72,7 +72,7 @@ type PrimeNgDynamicTableStateOpts = {
 export class PrimeNgDynamicTableStateHelper<T> {
   private readonly state = signalState<PrimeNgTableState<T>>(initialDynamicState<T>());
   private urlWithOutRouteParam: string;
-  private skipLoadingSpinnerContext?: any;
+  private skipLoadingSpinnerContext?: HttpContextToken<boolean>;
   readonly #uniqueKey = signal("id");
   readonly uniqueKey = this.#uniqueKey.asReadonly();
   #queryParams: PrimeNgTableStateHelperQueryParam = {};
@@ -85,7 +85,7 @@ export class PrimeNgDynamicTableStateHelper<T> {
   private constructor(
     private url: string,
     private readonly httpClient: HttpClient,
-    skipLoadingSpinnerContext?: any
+    skipLoadingSpinnerContext?: HttpContextToken<boolean>
   ) {
     this.urlWithOutRouteParam = url;
     this.skipLoadingSpinnerContext = skipLoadingSpinnerContext;
@@ -226,7 +226,7 @@ export class PrimeNgDynamicTableStateHelper<T> {
 
       const context = new HttpContext();
       if (this.skipLoadingSpinnerContext) {
-        context.set(SkipLoadingSpinner, true);
+        context.set(this.skipLoadingSpinnerContext, true);
       }
 
       const params = new URLSearchParams();

@@ -1,4 +1,4 @@
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpContextToken } from '@angular/common/http';
 import { signal, Signal } from '@angular/core';
 import { signalState, patchState } from '@ngrx/signals';
 import { Table, TableLazyLoadEvent } from 'primeng/table';
@@ -32,6 +32,7 @@ function initialPagedState<T>(): PrimeNgPagedTableState<T> {
 type PrimeNgPagedTableStateOpts = {
   url: string;
   httpClient: HttpClient;
+  skipLoadingSpinnerContext?: HttpContextToken<boolean>;
 };
 
 /**
@@ -66,6 +67,7 @@ type PrimeNgPagedTableStateOpts = {
 export class PrimengPagedDataTableStateHelper<T> {
   readonly #state = signalState<PrimeNgPagedTableState<T>>(initialPagedState<T>());
   private urlWithOutRouteParam: string;
+  private skipLoadingSpinnerContext?: HttpContextToken<boolean>;
   readonly #uniqueKey = signal("id");
   readonly uniqueKey = this.#uniqueKey.asReadonly();
   #queryParams: PrimeNgTableStateHelperQueryParam = {};
@@ -79,9 +81,11 @@ export class PrimengPagedDataTableStateHelper<T> {
 
   private constructor(
     private url: string,
-    private readonly httpClient: HttpClient
+    private readonly httpClient: HttpClient,
+    skipLoadingSpinnerContext?: HttpContextToken<boolean>
   ) {
     this.urlWithOutRouteParam = url;
+    this.skipLoadingSpinnerContext = skipLoadingSpinnerContext;
   }
 
   /**
@@ -90,7 +94,11 @@ export class PrimengPagedDataTableStateHelper<T> {
    * @returns New instance of PrimengPagedDataTableStateHelper
    */
   public static create<T>(option: PrimeNgPagedTableStateOpts): PrimengPagedDataTableStateHelper<T> {
-    return new PrimengPagedDataTableStateHelper<T>(option.url, option.httpClient);
+    return new PrimengPagedDataTableStateHelper<T>(
+      option.url, 
+      option.httpClient, 
+      option.skipLoadingSpinnerContext
+    );
   }
 
   /**
@@ -222,7 +230,10 @@ export class PrimengPagedDataTableStateHelper<T> {
     try {
       patchState(this.#state, { isLoading: true });
 
-      const context = new HttpContext().set(SkipLoadingSpinner, true);
+      const context = new HttpContext();
+      if (this.skipLoadingSpinnerContext) {
+        context.set(this.skipLoadingSpinnerContext, true);
+      }
 
       const params = new URLSearchParams();
       Object.entries(this.#queryParams).forEach(([key, value]) => {

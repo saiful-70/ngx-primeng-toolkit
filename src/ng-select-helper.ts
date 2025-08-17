@@ -1,4 +1,4 @@
-import { HttpClient, HttpContext } from "@angular/common/http";
+import { HttpClient, HttpContext, HttpContextToken } from "@angular/common/http";
 import { DestroyRef, signal } from "@angular/core";
 import {
   catchError,
@@ -25,6 +25,7 @@ type NgSelectHelperOpts = {
   usePostRequest: boolean;
   limit?: number;
   useCache?: boolean;
+  skipLoadingSpinnerContext?: HttpContextToken<boolean>;
 };
 
 /**
@@ -161,7 +162,8 @@ export class NgSelectHelper<TData> {
     private readonly destroyRef: DestroyRef,
     public readonly usePostRequest = false,
     limit: number = 50,
-    private readonly useCache: boolean = true
+    private readonly useCache: boolean = true,
+    private skipLoadingSpinnerContext?: HttpContextToken<boolean>
   ) {
     this.#originalAjaxUrl = ajaxUrl;
     this.#limit = limit > 0 ? limit : 50;
@@ -213,7 +215,8 @@ export class NgSelectHelper<TData> {
     destroyRef,
     usePostRequest,
     limit = 50,
-    useCache = true
+    useCache = true,
+    skipLoadingSpinnerContext
   }: NgSelectHelperOpts): NgSelectHelper<T> {
     return new NgSelectHelper<T>(
       ajaxUrl,
@@ -221,7 +224,8 @@ export class NgSelectHelper<TData> {
       destroyRef,
       usePostRequest,
       limit,
-      useCache
+      useCache,
+      skipLoadingSpinnerContext
     );
   }
 
@@ -521,19 +525,24 @@ export class NgSelectHelper<TData> {
 
     let req: Observable<NgSelectPagedDataResponse<TData> | null>;
 
+    const context = new HttpContext();
+    if (this.skipLoadingSpinnerContext) {
+      context.set(this.skipLoadingSpinnerContext, true);
+    }
+
     if (this.usePostRequest) {
       req = this.httpClient.post<NgSelectPagedDataResponse<TData>>(
         key.ajaxUrl,
         key.body,
         {
           params: key.queryParams,
-          context: new HttpContext().set(SkipLoadingSpinner, true)
+          context
         }
       );
     } else {
       req = this.httpClient.get<NgSelectPagedDataResponse<TData>>(key.ajaxUrl, {
         params: key.queryParams,
-        context: new HttpContext().set(SkipLoadingSpinner, true)
+        context
       });
     }
 

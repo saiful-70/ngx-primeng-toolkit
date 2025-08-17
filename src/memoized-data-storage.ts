@@ -1,5 +1,5 @@
 import { signal } from "@angular/core";
-import { HttpClient, HttpContext } from "@angular/common/http";
+import { HttpClient, HttpContext, HttpContextToken } from "@angular/common/http";
 import { firstValueFrom } from "rxjs";
 import { SkipLoadingSpinner } from "./http-context-tokens";
 
@@ -26,8 +26,12 @@ export class MemoizedDataStorage<T> {
   /**
    * Creates a new instance of MemoizedDataStorage
    * @param httpClient Angular HttpClient instance for making HTTP requests
+   * @param skipLoadingSpinnerContext Optional context token to skip loading spinner
    */
-  constructor(readonly httpClient: HttpClient) {}
+  constructor(
+    readonly httpClient: HttpClient,
+    private skipLoadingSpinnerContext?: HttpContextToken<boolean>
+  ) {}
 
   // Private signals for internal state management
   readonly #singleData = signal<T | null>(null);
@@ -100,10 +104,16 @@ export class MemoizedDataStorage<T> {
 
     try {
       this.#isLoading.set(true);
+      
+      const context = new HttpContext();
+      if (this.skipLoadingSpinnerContext) {
+        context.set(this.skipLoadingSpinnerContext, true);
+      }
+      
       const data = await firstValueFrom(
         this.httpClient.get<T>(url, {
           params: queryParams,
-          context: new HttpContext().set(SkipLoadingSpinner, true)
+          context
         })
       );
       this.#singleData.set(data);
@@ -146,10 +156,16 @@ export class MemoizedDataStorage<T> {
 
     try {
       this.#isLoading.set(true);
+      
+      const context = new HttpContext();
+      if (this.skipLoadingSpinnerContext) {
+        context.set(this.skipLoadingSpinnerContext, true);
+      }
+      
       const data = await firstValueFrom(
         this.httpClient.get<Array<T>>(url, {
           params: queryParams,
-          context: new HttpContext().set(SkipLoadingSpinner, true)
+          context
         })
       );
       this.#multipleData.set(Array.isArray(data) ? data : []);
