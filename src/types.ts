@@ -233,6 +233,9 @@ export interface PrimeNgTableHeader {
     field: string;
     hasSort?: boolean;
     isBoolean?: boolean;
+    isNested?: boolean;
+    isDate?: boolean;
+    isDateTime?: boolean;
     styleClass?: string;
   };
   filter?: {
