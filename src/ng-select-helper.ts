@@ -26,6 +26,8 @@ type NgSelectHelperOpts = {
   limit?: number;
   useCache?: boolean;
   skipLoadingSpinnerContext?: HttpContextToken<boolean>;
+  /** Whether to skip loading spinner. Defaults to true. Set to false to show loading spinner. */
+  skipLoadingSpinner?: boolean;
 };
 
 /**
@@ -163,7 +165,8 @@ export class NgSelectHelper<TData> {
     public readonly usePostRequest = false,
     limit: number = 50,
     private readonly useCache: boolean = true,
-    private skipLoadingSpinnerContext?: HttpContextToken<boolean>
+    private skipLoadingSpinnerContext?: HttpContextToken<boolean>,
+    private skipLoadingSpinner: boolean = true
   ) {
     this.#originalAjaxUrl = ajaxUrl;
     this.#limit = limit > 0 ? limit : 50;
@@ -216,7 +219,8 @@ export class NgSelectHelper<TData> {
     usePostRequest,
     limit = 50,
     useCache = true,
-    skipLoadingSpinnerContext
+    skipLoadingSpinnerContext,
+    skipLoadingSpinner = true
   }: NgSelectHelperOpts): NgSelectHelper<T> {
     return new NgSelectHelper<T>(
       ajaxUrl,
@@ -225,7 +229,8 @@ export class NgSelectHelper<TData> {
       usePostRequest,
       limit,
       useCache,
-      skipLoadingSpinnerContext
+      skipLoadingSpinnerContext,
+      skipLoadingSpinner
     );
   }
 
@@ -526,9 +531,17 @@ export class NgSelectHelper<TData> {
     let req: Observable<NgSelectPagedDataResponse<TData> | null>;
 
     const context = new HttpContext();
-    if (this.skipLoadingSpinnerContext) {
-      context.set(this.skipLoadingSpinnerContext, true);
+    
+    // Only set skip loading spinner context if user wants to skip it
+    if (this.skipLoadingSpinner) {
+      if (this.skipLoadingSpinnerContext) {
+        context.set(this.skipLoadingSpinnerContext, true);
+      } else {
+        // Use package's own token by default
+        context.set(SkipLoadingSpinner, true);
+      }
     }
+    // If skipLoadingSpinner is false, don't set any context token (show loading spinner)
 
     if (this.usePostRequest) {
       req = this.httpClient.post<NgSelectPagedDataResponse<TData>>(
