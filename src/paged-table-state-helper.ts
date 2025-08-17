@@ -32,9 +32,8 @@ function initialPagedState<T>(): PrimeNgPagedTableState<T> {
 type PrimeNgPagedTableStateOpts = {
   url: string;
   httpClient: HttpClient;
+  /** Optional context token to skip loading spinner. If provided, loading spinner will be skipped. If not provided, loading spinner will be shown. */
   skipLoadingSpinnerContext?: HttpContextToken<boolean>;
-  /** Whether to skip loading spinner. Defaults to true. Set to false to show loading spinner. */
-  skipLoadingSpinner?: boolean;
 };
 
 /**
@@ -70,7 +69,6 @@ export class PrimengPagedDataTableStateHelper<T> {
   readonly #state = signalState<PrimeNgPagedTableState<T>>(initialPagedState<T>());
   private urlWithOutRouteParam: string;
   private skipLoadingSpinnerContext?: HttpContextToken<boolean>;
-  private skipLoadingSpinner: boolean;
   readonly #uniqueKey = signal("id");
   readonly uniqueKey = this.#uniqueKey.asReadonly();
   #queryParams: PrimeNgTableStateHelperQueryParam = {};
@@ -85,12 +83,10 @@ export class PrimengPagedDataTableStateHelper<T> {
   private constructor(
     private url: string,
     private readonly httpClient: HttpClient,
-    skipLoadingSpinnerContext?: HttpContextToken<boolean>,
-    skipLoadingSpinner: boolean = true
+    skipLoadingSpinnerContext?: HttpContextToken<boolean>
   ) {
     this.urlWithOutRouteParam = url;
     this.skipLoadingSpinnerContext = skipLoadingSpinnerContext;
-    this.skipLoadingSpinner = skipLoadingSpinner;
   }
 
   /**
@@ -102,8 +98,7 @@ export class PrimengPagedDataTableStateHelper<T> {
     return new PrimengPagedDataTableStateHelper<T>(
       option.url, 
       option.httpClient, 
-      option.skipLoadingSpinnerContext,
-      option.skipLoadingSpinner ?? true
+      option.skipLoadingSpinnerContext
     );
   }
 
@@ -238,16 +233,11 @@ export class PrimengPagedDataTableStateHelper<T> {
 
       const context = new HttpContext();
       
-      // Only set skip loading spinner context if user wants to skip it
-      if (this.skipLoadingSpinner) {
-        if (this.skipLoadingSpinnerContext) {
-          context.set(this.skipLoadingSpinnerContext, true);
-        } else {
-          // Use package's own token by default
-          context.set(SkipLoadingSpinner, true);
-        }
+      // Simple rule: If skipLoadingSpinnerContext is provided, skip loading spinner
+      // If not provided, show loading spinner
+      if (this.skipLoadingSpinnerContext) {
+        context.set(this.skipLoadingSpinnerContext, true);
       }
-      // If skipLoadingSpinner is false, don't set any context token (show loading spinner)
 
       const params = new URLSearchParams();
       Object.entries(this.#queryParams).forEach(([key, value]) => {

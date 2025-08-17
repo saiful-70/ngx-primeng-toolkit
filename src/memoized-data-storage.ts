@@ -26,13 +26,11 @@ export class MemoizedDataStorage<T> {
   /**
    * Creates a new instance of MemoizedDataStorage
    * @param httpClient Angular HttpClient instance for making HTTP requests
-   * @param skipLoadingSpinnerContext Optional context token to skip loading spinner
-   * @param skipLoadingSpinner Whether to skip loading spinner. Defaults to true. Set to false to show loading spinner.
+   * @param skipLoadingSpinnerContext Optional context token to skip loading spinner. If provided, loading spinner will be skipped. If not provided, loading spinner will be shown.
    */
   constructor(
     readonly httpClient: HttpClient,
-    private skipLoadingSpinnerContext?: HttpContextToken<boolean>,
-    private skipLoadingSpinner: boolean = true
+    private skipLoadingSpinnerContext?: HttpContextToken<boolean>
   ) {}
 
   // Private signals for internal state management
@@ -109,16 +107,11 @@ export class MemoizedDataStorage<T> {
       
       const context = new HttpContext();
       
-      // Only set skip loading spinner context if user wants to skip it
-      if (this.skipLoadingSpinner) {
-        if (this.skipLoadingSpinnerContext) {
-          context.set(this.skipLoadingSpinnerContext, true);
-        } else {
-          // Use package's own token by default
-          context.set(SkipLoadingSpinner, true);
-        }
+      // Simple rule: If skipLoadingSpinnerContext is provided, skip loading spinner
+      // If not provided, show loading spinner
+      if (this.skipLoadingSpinnerContext) {
+        context.set(this.skipLoadingSpinnerContext, true);
       }
-      // If skipLoadingSpinner is false, don't set any context token (show loading spinner)
       
       const data = await firstValueFrom(
         this.httpClient.get<T>(url, {
@@ -169,16 +162,11 @@ export class MemoizedDataStorage<T> {
       
       const context = new HttpContext();
       
-      // Only set skip loading spinner context if user wants to skip it
-      if (this.skipLoadingSpinner) {
-        if (this.skipLoadingSpinnerContext) {
-          context.set(this.skipLoadingSpinnerContext, true);
-        } else {
-          // Use package's own token by default
-          context.set(SkipLoadingSpinner, true);
-        }
+      // Simple rule: If skipLoadingSpinnerContext is provided, skip loading spinner
+      // If not provided, show loading spinner
+      if (this.skipLoadingSpinnerContext) {
+        context.set(this.skipLoadingSpinnerContext, true);
       }
-      // If skipLoadingSpinner is false, don't set any context token (show loading spinner)
       
       const data = await firstValueFrom(
         this.httpClient.get<Array<T>>(url, {

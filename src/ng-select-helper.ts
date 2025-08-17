@@ -25,9 +25,8 @@ type NgSelectHelperOpts = {
   usePostRequest: boolean;
   limit?: number;
   useCache?: boolean;
+  /** Optional context token to skip loading spinner. If provided, loading spinner will be skipped. If not provided, loading spinner will be shown. */
   skipLoadingSpinnerContext?: HttpContextToken<boolean>;
-  /** Whether to skip loading spinner. Defaults to true. Set to false to show loading spinner. */
-  skipLoadingSpinner?: boolean;
 };
 
 /**
@@ -165,8 +164,7 @@ export class NgSelectHelper<TData> {
     public readonly usePostRequest = false,
     limit: number = 50,
     private readonly useCache: boolean = true,
-    private skipLoadingSpinnerContext?: HttpContextToken<boolean>,
-    private skipLoadingSpinner: boolean = true
+    private skipLoadingSpinnerContext?: HttpContextToken<boolean>
   ) {
     this.#originalAjaxUrl = ajaxUrl;
     this.#limit = limit > 0 ? limit : 50;
@@ -219,8 +217,7 @@ export class NgSelectHelper<TData> {
     usePostRequest,
     limit = 50,
     useCache = true,
-    skipLoadingSpinnerContext,
-    skipLoadingSpinner = true
+    skipLoadingSpinnerContext
   }: NgSelectHelperOpts): NgSelectHelper<T> {
     return new NgSelectHelper<T>(
       ajaxUrl,
@@ -229,8 +226,7 @@ export class NgSelectHelper<TData> {
       usePostRequest,
       limit,
       useCache,
-      skipLoadingSpinnerContext,
-      skipLoadingSpinner
+      skipLoadingSpinnerContext
     );
   }
 
@@ -532,16 +528,11 @@ export class NgSelectHelper<TData> {
 
     const context = new HttpContext();
     
-    // Only set skip loading spinner context if user wants to skip it
-    if (this.skipLoadingSpinner) {
-      if (this.skipLoadingSpinnerContext) {
-        context.set(this.skipLoadingSpinnerContext, true);
-      } else {
-        // Use package's own token by default
-        context.set(SkipLoadingSpinner, true);
-      }
+    // Simple rule: If skipLoadingSpinnerContext is provided, skip loading spinner
+    // If not provided, show loading spinner
+    if (this.skipLoadingSpinnerContext) {
+      context.set(this.skipLoadingSpinnerContext, true);
     }
-    // If skipLoadingSpinner is false, don't set any context token (show loading spinner)
 
     if (this.usePostRequest) {
       req = this.httpClient.post<NgSelectPagedDataResponse<TData>>(
