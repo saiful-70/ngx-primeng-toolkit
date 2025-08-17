@@ -535,24 +535,19 @@ export class NgSelectHelper<TData> {
 
     let req: Observable<NgSelectPagedDataResponse<TData> | null>;
 
-    const context = new HttpContext();
-    if (this.skipLoadingSpinner) {
-      context.set(SkipLoadingSpinner, true);
-    }
-
     if (this.usePostRequest) {
       req = this.httpClient.post<NgSelectPagedDataResponse<TData>>(
         key.ajaxUrl,
         key.body,
         {
           params: key.queryParams,
-          context
+          context: new HttpContext().set(SkipLoadingSpinner, this.skipLoadingSpinner)
         }
       );
     } else {
       req = this.httpClient.get<NgSelectPagedDataResponse<TData>>(key.ajaxUrl, {
         params: key.queryParams,
-        context
+        context: new HttpContext().set(SkipLoadingSpinner, this.skipLoadingSpinner)
       });
     }
 

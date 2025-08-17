@@ -236,11 +236,6 @@ export class PrimengPagedDataTableStateHelper<T> {
     try {
       patchState(this.#state, { isLoading: true });
 
-      const context = new HttpContext();
-      if (this.skipLoadingSpinner) {
-        context.set(SkipLoadingSpinner, true);
-      }
-
       const params = new URLSearchParams();
       Object.entries(this.#queryParams).forEach(([key, value]) => {
         params.append(key, String(value));
@@ -254,7 +249,7 @@ export class PrimengPagedDataTableStateHelper<T> {
         : this.url;
 
       const response = await firstValueFrom(
-        this.httpClient.get(urlWithParams, { context })
+        this.httpClient.get(urlWithParams, { context: new HttpContext().set(SkipLoadingSpinner, this.skipLoadingSpinner) })
       );
 
       const validatedResponse = PagedDataResponseZodSchema.parse(response);

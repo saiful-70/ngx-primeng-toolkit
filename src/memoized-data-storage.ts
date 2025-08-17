@@ -113,16 +113,11 @@ export class MemoizedDataStorage<T> {
 
     try {
       this.#isLoading.set(true);
-      
-      const context = new HttpContext();
-      if (this.skipLoadingSpinner) {
-        context.set(SkipLoadingSpinner, true);
-      }
 
       const data = await firstValueFrom(
         this.httpClient.get<T>(url, {
           params: queryParams,
-          context
+          context: new HttpContext().set(SkipLoadingSpinner, this.skipLoadingSpinner)
         })
       );
       this.#singleData.set(data);

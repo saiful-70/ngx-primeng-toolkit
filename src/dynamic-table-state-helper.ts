@@ -234,11 +234,6 @@ export class PrimeNgDynamicTableStateHelper<T> {
     try {
       patchState(this.state, { isLoading: true });
 
-      const context = new HttpContext();
-      if (this.skipLoadingSpinner) {
-        context.set(SkipLoadingSpinner, true);
-      }
-
       const params = new URLSearchParams();
       Object.entries(this.#queryParams).forEach(([key, value]) => {
         params.append(key, String(value));
@@ -249,7 +244,7 @@ export class PrimeNgDynamicTableStateHelper<T> {
         : this.url;
 
       const response = await firstValueFrom(
-        this.httpClient.post(urlWithParams, dto, { context })
+        this.httpClient.post(urlWithParams, dto, { context: new HttpContext().set(SkipLoadingSpinner, this.skipLoadingSpinner) })
       );
 
       const validatedResponse = dynamicQueryResponseZodSchema.parse(response);
