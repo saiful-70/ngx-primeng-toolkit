@@ -1,4 +1,3 @@
-import { FilterMetadata } from 'primeng/api';
 import { z } from 'zod';
 
 // ===============================================================================
@@ -6,72 +5,113 @@ import { z } from 'zod';
 // ===============================================================================
 
 /**
- * Makes all properties of T nullable (T | null)
- * @template T - The type to make nullable
+ * Makes all properties of T nullable (T | null) recursively, handling functions, arrays, and objects
+ * @template Thing - The type to make nullable
  * @example
  * ```typescript
- * type User = { id: number; name: string; email: string };
+ * type User = { id: number; name: string; email: string; tags: string[] };
  * type NullableUser = RecursiveNullable<User>;
- * // Result: { id: number | null; name: string | null; email: string | null }
+ * // Result: { 
+ * //   id: number | null; 
+ * //   name: string | null; 
+ * //   email: string | null;
+ * //   tags: (string | null)[] | null;
+ * // }
  * ```
  */
-export type RecursiveNullable<T> = {
-  [P in keyof T]: T[P] | null;
+export type RecursiveNullable<Thing> = Thing extends Function
+  ? Thing
+  : Thing extends Array<infer InferredArrayMember>
+    ? RecursiveNullableArray<InferredArrayMember>
+    : Thing extends Record<string, any>
+      ? RecursiveNullableObject<Thing>
+      : Exclude<Thing, undefined> | null;
+
+type RecursiveNullableObject<Thing extends object> = {
+  [Key in keyof Thing]: RecursiveNullable<Thing[Key]>;
 };
 
+interface RecursiveNullableArray<Thing>
+  extends Array<RecursiveNullable<Thing>> {}
+
 /**
- * Represents a value that can be null or undefined
+ * Makes all properties of T nullish (T | null | undefined)
  * @template T - The base type
  * @example
  * ```typescript
- * type MaybeString = Nullish<string>; // string | null | undefined
+ * type User = { id: number; name: string };
+ * type NullishUser = Nullish<User>;
+ * // Result: { id: number | null | undefined; name: string | null | undefined }
  * ```
  */
-export type Nullish<T> = T | null | undefined;
+export type Nullish<T> = {
+  [P in keyof T]: Exclude<T[P], null | undefined> | null | undefined;
+};
 
 /**
- * Makes all properties of T nullish (T | null | undefined) recursively
- * @template T - The type to make nullish
+ * Makes all properties of T nullish (T | null | undefined) recursively, handling functions, arrays, and objects
+ * @template Thing - The type to make nullish
  * @example
  * ```typescript
- * type User = { id: number; profile: { name: string; age: number } };
+ * type User = { id: number; profile: { name: string; age: number }; tags: string[] };
  * type NullishUser = RecursiveNullish<User>;
  * // Result: { 
  * //   id: number | null | undefined; 
  * //   profile: { 
  * //     name: string | null | undefined; 
  * //     age: number | null | undefined 
- * //   } | null | undefined 
+ * //   } | null | undefined;
+ * //   tags: (string | null | undefined)[] | null | undefined;
  * // }
  * ```
  */
-export type RecursiveNullish<T> = {
-  [P in keyof T]: T[P] extends object
-    ? RecursiveNullish<T[P]> | null | undefined
-    : T[P] | null | undefined;
+export type RecursiveNullish<Thing> = Thing extends Function
+  ? Thing
+  : Thing extends Array<infer InferredArrayMember>
+    ? RecursiveNullishArray<InferredArrayMember>
+    : Thing extends Record<string, any>
+      ? RecursiveNullishObject<Thing>
+      : Exclude<Thing, null | undefined> | null | undefined;
+
+type RecursiveNullishObject<Thing extends object> = {
+  [Key in keyof Thing]: RecursiveNullish<Thing[Key]>;
 };
 
+interface RecursiveNullishArray<Thing> extends Array<RecursiveNullish<Thing>> {}
+
 /**
- * Makes all properties optional recursively, useful for partial updates
- * @template T - The type to make recursively partial
+ * Makes all properties optional recursively, useful for partial updates, handling functions, arrays, and objects
+ * @template Thing - The type to make recursively partial
  * @example
  * ```typescript
  * type User = { 
  *   id: number; 
  *   profile: { name: string; age: number }; 
- *   settings: { theme: string; notifications: boolean } 
+ *   settings: { theme: string; notifications: boolean };
+ *   tags: string[];
  * };
  * type PartialUser = RecursivePartial<User>;
  * // Result: { 
- * //   id?: number; 
- * //   profile?: { name?: string; age?: number }; 
- * //   settings?: { theme?: string; notifications?: boolean } 
+ * //   id?: number | undefined; 
+ * //   profile?: { name?: string | undefined; age?: number | undefined } | undefined; 
+ * //   settings?: { theme?: string | undefined; notifications?: boolean | undefined } | undefined;
+ * //   tags?: (string | undefined)[] | undefined;
  * // }
  * ```
  */
-export type RecursivePartial<T> = {
-  [P in keyof T]?: T[P] extends object ? RecursivePartial<T[P]> : T[P];
+export type RecursivePartial<Thing> = Thing extends Function
+  ? Thing
+  : Thing extends Array<infer InferredArrayMember>
+    ? RecursivePartialArray<InferredArrayMember>
+    : Thing extends object
+      ? RecursivePartialObject<Thing>
+      : Thing | undefined;
+
+type RecursivePartialObject<Thing> = {
+  [Key in keyof Thing]?: RecursivePartial<Thing[Key]>;
 };
+
+interface RecursivePartialArray<Thing> extends Array<RecursivePartial<Thing>> {}
 
 // ===============================================================================
 // Core Data Types
