@@ -279,7 +279,7 @@ export interface DynamicQuerySortDto {
 /**
  * Paged data response interface
  */
-export interface PagedDataResponse<T> {
+export interface DynamicQueryPagedDataResponse<T> {
   data: T[];
   last_page: number;
   last_row: number;
@@ -288,7 +288,7 @@ export interface PagedDataResponse<T> {
 /**
  * Paged data response interface for simple pagination
  */
-export interface SimplePagedDataResponse<T> {
+export interface PagedDataResponse<T> {
   payload: T[];
   totalCount: number;
 }
@@ -409,9 +409,9 @@ export function isPaginatedResponse<T>(response: any): response is PaginatedResp
 /**
  * Type guard to check if a response is a simple paged response
  * @param response The response to check
- * @returns true if response is SimplePagedDataResponse, false otherwise
+ * @returns true if response is PagedDataResponse, false otherwise
  */
-export function isSimplePagedResponse<T>(response: any): response is SimplePagedDataResponse<T> {
+export function isSimplePagedResponse<T>(response: any): response is PagedDataResponse<T> {
   return (
     typeof response === 'object' &&
     response !== null &&
@@ -427,7 +427,7 @@ export function isSimplePagedResponse<T>(response: any): response is SimplePaged
  * @param response The response to check
  * @returns true if response is PagedDataResponse, false otherwise
  */
-export function isDynamicQueryResponse<T>(response: any): response is PagedDataResponse<T> {
+export function isDynamicQueryResponse<T>(response: any): response is DynamicQueryPagedDataResponse<T> {
   return (
     typeof response === 'object' &&
     response !== null &&
