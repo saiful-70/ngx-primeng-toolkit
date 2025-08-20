@@ -6,7 +6,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { SkipLoadingSpinner } from './http-context-tokens';
 import {
-  SimplePagedDataResponse,
+  PagedDataResponse,
   PrimeNgPagedTableState,
   PagedDataQueryDto,
   PrimeNgTableStateHelperQueryParam,
