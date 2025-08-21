@@ -1,16 +1,15 @@
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { signal, Signal } from '@angular/core';
-import { signalState, patchState } from '@ngrx/signals';
+import { patchState, signalState } from '@ngrx/signals';
 import { Table, TableLazyLoadEvent } from 'primeng/table';
 import { firstValueFrom } from 'rxjs';
 
 import { SkipLoadingSpinner } from './http-context-tokens';
 import {
-  PagedDataResponse,
-  PrimeNgPagedTableState,
   PagedDataQueryDto,
-  PrimeNgTableStateHelperQueryParam,
-  PagedDataResponseZodSchema
+  PagedDataResponseZodSchema,
+  PrimeNgPagedTableState,
+  PrimeNgTableStateHelperQueryParam
 } from './types';
 
 /**
@@ -64,7 +63,7 @@ type PrimeNgPagedTableStateOpts = {
  * </p-table>
  * ```
  */
-export class PrimengPagedDataTableStateHelper<T> {
+export class PrimeNgPagedDataTableStateHelper<T> {
   readonly #state = signalState<PrimeNgPagedTableState<T>>(initialPagedState<T>());
   private urlWithOutRouteParam: string;
   private skipLoadingSpinner: boolean;
@@ -93,8 +92,8 @@ export class PrimengPagedDataTableStateHelper<T> {
    * @param option - Configuration options
    * @returns New instance of PrimengPagedDataTableStateHelper
    */
-  public static create<T>(option: PrimeNgPagedTableStateOpts): PrimengPagedDataTableStateHelper<T> {
-    return new PrimengPagedDataTableStateHelper<T>(option.url, option.httpClient, option.skipLoadingSpinner ?? true);
+  public static create<T>(option: PrimeNgPagedTableStateOpts): PrimeNgPagedDataTableStateHelper<T> {
+    return new PrimeNgPagedDataTableStateHelper<T>(option.url, option.httpClient, option.skipLoadingSpinner ?? true);
   }
 
   /**
@@ -104,8 +103,8 @@ export class PrimengPagedDataTableStateHelper<T> {
    */
   public static createWithBlankUrl<T>(
     option: Omit<PrimeNgPagedTableStateOpts, "url">
-  ): PrimengPagedDataTableStateHelper<T> {
-    return new PrimengPagedDataTableStateHelper<T>("", option.httpClient, option.skipLoadingSpinner ?? true);
+  ): PrimeNgPagedDataTableStateHelper<T> {
+    return new PrimeNgPagedDataTableStateHelper<T>("", option.httpClient, option.skipLoadingSpinner ?? true);
   }
 
   /**
