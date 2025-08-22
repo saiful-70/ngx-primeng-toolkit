@@ -142,9 +142,7 @@ export enum ManipulationType {
   /** Deleting an item */
   Delete = "Delete",
   /** Viewing item details */
-  View = "View",
-  /** Saving an item **/
-  Save = "Save"
+  View = "View"
 }
 
 /**
