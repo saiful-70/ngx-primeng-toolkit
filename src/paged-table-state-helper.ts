@@ -248,6 +248,9 @@ export class PrimeNgPagedDataTableStateHelper<T> {
    * Fetches data from the API
    */
   private async fetchData(dto: PagedDataQueryDto): Promise<void> {
+    if (this.isLoading()) {
+      return;
+    }
     try {
       patchState(this.#state, { isLoading: true });
 

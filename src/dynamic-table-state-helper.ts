@@ -245,6 +245,9 @@ export class PrimeNgDynamicTableStateHelper<T> {
    * Fetches data from the API
    */
   private async fetchData(dto: DynamicQueryDto): Promise<void> {
+    if (this.isLoading()) {
+      return;
+    }
     try {
       patchState(this.state, { isLoading: true });
 
