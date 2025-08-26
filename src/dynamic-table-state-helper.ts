@@ -272,12 +272,12 @@ export class PrimeNgDynamicTableStateHelper<T> {
         isLoading: false
       });
     } catch (error) {
-      console.error("Error fetching table data:", error);
       patchState(this.state, {
         data: [],
         totalRecords: 0,
         isLoading: false
       });
+      throw error;
     }
   }
 

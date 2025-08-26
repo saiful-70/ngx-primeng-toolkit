@@ -278,12 +278,12 @@ export class PrimeNgPagedDataTableStateHelper<T> {
         isLoading: false
       });
     } catch (error) {
-      console.error("Error fetching paged data:", error);
       patchState(this.#state, {
         data: [],
         totalRecords: 0,
         isLoading: false
       });
+      throw error;
     }
   }
 
