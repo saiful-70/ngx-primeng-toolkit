@@ -91,16 +91,16 @@
       "optional": false
     },
     "primeng": {
-      "optional": true
+      "optional": false
     },
     "rxjs": {
       "optional": false
     },
     "zod": {
-      "optional": true
+      "optional": false
     },
     "@ng-select/ng-select": {
-      "optional": true
+      "optional": false
     }
   }
 }

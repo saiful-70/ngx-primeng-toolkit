@@ -1,11 +1,11 @@
-import { HttpClient, HttpContext } from '@angular/common/http';
-import { signal, Signal } from '@angular/core';
-import { signalState, patchState } from '@ngrx/signals';
-import { FilterMetadata } from 'primeng/api';
-import { Table, TableLazyLoadEvent } from 'primeng/table';
-import { firstValueFrom } from 'rxjs';
+import { HttpClient, HttpContext } from "@angular/common/http";
+import { signal, Signal } from "@angular/core";
+import { signalState, patchState } from "@ngrx/signals";
+import { FilterMetadata } from "primeng/api";
+import { Table, TableLazyLoadEvent } from "primeng/table";
+import { firstValueFrom } from "rxjs";
 
-import { SkipLoadingSpinner } from './http-context-tokens';
+import { SkipLoadingSpinner } from "./http-context-tokens";
 import {
   DynamicQueryDto,
   DynamicQueryFilterDto,
@@ -15,7 +15,7 @@ import {
   PrimeNgTableStateHelperQueryParam,
   FilterTypeMapped,
   dynamicQueryResponseZodSchema
-} from './types';
+} from "./types";
 
 /**
  * Initial state factory function for dynamic table
@@ -43,7 +43,7 @@ type PrimeNgDynamicTableStateOpts = {
 
 /**
  * PrimeNG Dynamic Table State Helper class for managing table state with lazy loading, filtering, and sorting
- * 
+ *
  * This helper provides advanced table functionality including:
  * - Lazy loading with pagination
  * - Column filtering with multiple filter types
@@ -52,14 +52,14 @@ type PrimeNgDynamicTableStateOpts = {
  * - Automatic API integration
  * - Route parameter support
  * - Query parameter management
- * 
+ *
  * @example
  * ```typescript
  * const tableState = PrimeNgDynamicTableStateHelper.create<User>({
  *   url: '/api/users',
  *   httpClient: this.httpClient
  * });
- * 
+ *
  * // In template
  * <p-table [value]="tableState.data()"
  *          [lazy]="true"
@@ -96,7 +96,9 @@ export class PrimeNgDynamicTableStateHelper<T> {
    * @param options - Configuration options
    * @returns New instance of PrimeNgDynamicTableStateHelper
    */
-  public static create<T>(options: PrimeNgDynamicTableStateOpts): PrimeNgDynamicTableStateHelper<T> {
+  public static create<T>(
+    options: PrimeNgDynamicTableStateOpts
+  ): PrimeNgDynamicTableStateHelper<T> {
     return new PrimeNgDynamicTableStateHelper<T>(
       options.url,
       options.httpClient,
@@ -180,21 +182,27 @@ export class PrimeNgDynamicTableStateHelper<T> {
    * @param event - The lazy load event from PrimeNG table
    */
   public async onLazyLoad(event: TableLazyLoadEvent): Promise<void> {
+    if (this.isLoading()) {
+      return;
+    }
     patchState(this.state, {
       size: event.rows || 15,
       page: Math.floor((event.first || 0) / (event.rows || 15)) + 1,
       filter: this.filterMapper(event.filters || {}),
-      sort: Object.keys(event.multiSortMeta || {}).length > 0
-        ? (event.multiSortMeta || []).map((sort: any) => ({
-            field: sort.field,
-            dir: (sort.order === 1 ? "asc" : "desc") as "asc" | "desc"
-          }))
-        : event.sortField
-        ? [{
-            field: event.sortField,
-            dir: ((event.sortOrder || 1) === 1 ? "asc" : "desc") as "asc" | "desc"
-          }]
-        : []
+      sort:
+        Object.keys(event.multiSortMeta || {}).length > 0
+          ? (event.multiSortMeta || []).map((sort: any) => ({
+              field: sort.field,
+              dir: (sort.order === 1 ? "asc" : "desc") as "asc" | "desc"
+            }))
+          : event.sortField
+          ? [
+              {
+                field: event.sortField,
+                dir: ((event.sortOrder || 1) === 1 ? "asc" : "desc") as "asc" | "desc"
+              }
+            ]
+          : []
     });
 
     await this.fetchData(this.dtoBuilder());
@@ -205,6 +213,9 @@ export class PrimeNgDynamicTableStateHelper<T> {
    * @param table - Optional PrimeNG Table reference to reset
    */
   public async clearTableData(table?: Table): Promise<void> {
+    if (this.isLoading()) {
+      return;
+    }
     patchState(this.state, {
       data: [],
       totalRecords: 0,
@@ -224,6 +235,9 @@ export class PrimeNgDynamicTableStateHelper<T> {
    * Manually triggers data refresh with current state
    */
   public async refresh(): Promise<void> {
+    if (this.isLoading()) {
+      return;
+    }
     await this.fetchData(this.dtoBuilder());
   }
 
@@ -239,12 +253,12 @@ export class PrimeNgDynamicTableStateHelper<T> {
         params.append(key, String(value));
       });
 
-      const urlWithParams = params.toString() 
-        ? `${this.url}?${params.toString()}`
-        : this.url;
+      const urlWithParams = params.toString() ? `${this.url}?${params.toString()}` : this.url;
 
       const response = await firstValueFrom(
-        this.httpClient.post(urlWithParams, dto, { context: new HttpContext().set(SkipLoadingSpinner, this.skipLoadingSpinner) })
+        this.httpClient.post(urlWithParams, dto, {
+          context: new HttpContext().set(SkipLoadingSpinner, this.skipLoadingSpinner)
+        })
       );
 
       const validatedResponse = dynamicQueryResponseZodSchema.parse(response);
@@ -255,7 +269,7 @@ export class PrimeNgDynamicTableStateHelper<T> {
         isLoading: false
       });
     } catch (error) {
-      console.error('Error fetching table data:', error);
+      console.error("Error fetching table data:", error);
       patchState(this.state, {
         data: [],
         totalRecords: 0,
@@ -288,9 +302,9 @@ export class PrimeNgDynamicTableStateHelper<T> {
       if (!filterData) return;
 
       const processFilter = (filter: FilterMetadata) => {
-        if (filter.value === null || filter.value === undefined || filter.value === '') return;
+        if (filter.value === null || filter.value === undefined || filter.value === "") return;
 
-        const mappedType = this.evaluateInput(filter.matchMode || 'contains');
+        const mappedType = this.evaluateInput(filter.matchMode || "contains");
         if (mappedType) {
           filters.push({
             field,

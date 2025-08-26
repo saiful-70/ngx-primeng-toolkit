@@ -1,16 +1,15 @@
-import { HttpClient, HttpContext } from '@angular/common/http';
-import { signal, Signal } from '@angular/core';
-import { patchState, signalState } from '@ngrx/signals';
-import { Table, TableLazyLoadEvent } from 'primeng/table';
-import { firstValueFrom } from 'rxjs';
-
-import { SkipLoadingSpinner } from './http-context-tokens';
+import { HttpClient, HttpContext } from "@angular/common/http";
+import { signal, Signal } from "@angular/core";
+import { patchState, signalState } from "@ngrx/signals";
+import { Table, TableLazyLoadEvent } from "primeng/table";
+import { firstValueFrom } from "rxjs";
+import { SkipLoadingSpinner } from "./http-context-tokens";
 import {
   PagedDataQueryDto,
   PagedDataResponseZodSchema,
   PrimeNgPagedTableState,
   PrimeNgTableStateHelperQueryParam
-} from './types';
+} from "./types";
 
 /**
  * Initial state factory function for paged table
@@ -36,24 +35,24 @@ type PrimeNgPagedTableStateOpts = {
 
 /**
  * Simple paged data table state helper for basic pagination without filtering
- * 
+ *
  * This helper provides basic table functionality including:
  * - Simple pagination (page and limit only)
  * - Basic state management with NgRx Signals
  * - API integration for paged data
  * - Route parameter support
  * - Query parameter management
- * 
+ *
  * Use this when you need simple pagination without complex filtering and sorting.
  * For advanced features, use PrimeNgDynamicTableStateHelper instead.
- * 
+ *
  * @example
  * ```typescript
  * const tableState = PrimengPagedDataTableStateHelper.create<Product>({
  *   url: '/api/products',
  *   httpClient: this.httpClient
  * });
- * 
+ *
  * // In template
  * <p-table [value]="tableState.data()"
  *          [lazy]="true"
@@ -93,7 +92,11 @@ export class PrimeNgPagedDataTableStateHelper<T> {
    * @returns New instance of PrimengPagedDataTableStateHelper
    */
   public static create<T>(option: PrimeNgPagedTableStateOpts): PrimeNgPagedDataTableStateHelper<T> {
-    return new PrimeNgPagedDataTableStateHelper<T>(option.url, option.httpClient, option.skipLoadingSpinner ?? true);
+    return new PrimeNgPagedDataTableStateHelper<T>(
+      option.url,
+      option.httpClient,
+      option.skipLoadingSpinner ?? true
+    );
   }
 
   /**
@@ -104,7 +107,11 @@ export class PrimeNgPagedDataTableStateHelper<T> {
   public static createWithBlankUrl<T>(
     option: Omit<PrimeNgPagedTableStateOpts, "url">
   ): PrimeNgPagedDataTableStateHelper<T> {
-    return new PrimeNgPagedDataTableStateHelper<T>("", option.httpClient, option.skipLoadingSpinner ?? true);
+    return new PrimeNgPagedDataTableStateHelper<T>(
+      "",
+      option.httpClient,
+      option.skipLoadingSpinner ?? true
+    );
   }
 
   /**
@@ -192,6 +199,9 @@ export class PrimeNgPagedDataTableStateHelper<T> {
    * @param event - The lazy load event from PrimeNG table
    */
   public async onLazyLoad(event: TableLazyLoadEvent): Promise<void> {
+    if (this.isLoading()) {
+      return;
+    }
     const newPage = Math.floor((event.first || 0) / (event.rows || 15)) + 1;
     const newLimit = event.rows || 15;
 
@@ -208,6 +218,9 @@ export class PrimeNgPagedDataTableStateHelper<T> {
    * @param table - Optional PrimeNG Table reference to reset
    */
   public async clearTableData(table?: Table): Promise<void> {
+    if (this.isLoading()) {
+      return;
+    }
     patchState(this.#state, {
       data: [],
       totalRecords: 0,
@@ -225,6 +238,9 @@ export class PrimeNgPagedDataTableStateHelper<T> {
    * Manually triggers data refresh with current state
    */
   public async refresh(): Promise<void> {
+    if (this.isLoading()) {
+      return;
+    }
     await this.fetchData(this.dtoBuilder());
   }
 
@@ -243,12 +259,12 @@ export class PrimeNgPagedDataTableStateHelper<T> {
         params.append(key, String(value));
       });
 
-      const urlWithParams = params.toString() 
-        ? `${this.url}?${params.toString()}`
-        : this.url;
+      const urlWithParams = params.toString() ? `${this.url}?${params.toString()}` : this.url;
 
       const response = await firstValueFrom(
-        this.httpClient.get(urlWithParams, { context: new HttpContext().set(SkipLoadingSpinner, this.skipLoadingSpinner) })
+        this.httpClient.get(urlWithParams, {
+          context: new HttpContext().set(SkipLoadingSpinner, this.skipLoadingSpinner)
+        })
       );
 
       const validatedResponse = PagedDataResponseZodSchema.parse(response);
@@ -259,7 +275,7 @@ export class PrimeNgPagedDataTableStateHelper<T> {
         isLoading: false
       });
     } catch (error) {
-      console.error('Error fetching paged data:', error);
+      console.error("Error fetching paged data:", error);
       patchState(this.#state, {
         data: [],
         totalRecords: 0,
