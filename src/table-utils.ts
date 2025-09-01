@@ -1,9 +1,5 @@
 import { SelectItem } from "primeng/api";
-import { 
-  StringFilterType, 
-  NumericFilterType, 
-  PrimeNgTableHeader 
-} from "./types";
+import { StringFilterType, NumericFilterType, PrimeNgTableHeader, NestableColumn } from "./types";
 
 /**
  * Creates PrimeNG SelectItem array for numeric filter match modes
@@ -135,7 +131,7 @@ export function createTextColumn(
     defaultMatchMode?: StringFilterType;
     styleClass?: string;
     filterStyleClass?: Record<string, string>;
-  } = {}
+  } & NestableColumn = {}
 ): PrimeNgTableHeader {
   const header: PrimeNgTableHeader = {
     identifier: {
@@ -178,7 +174,7 @@ export function createNumericColumn(
     defaultMatchMode?: NumericFilterType;
     styleClass?: string;
     filterStyleClass?: Record<string, string>;
-  } = {}
+  } & NestableColumn = {}
 ): PrimeNgTableHeader {
   const header: PrimeNgTableHeader = {
     identifier: {
@@ -218,7 +214,7 @@ export function createBooleanColumn(
     hasFilter?: boolean;
     styleClass?: string;
     filterStyleClass?: Record<string, string>;
-  } = {}
+  } & NestableColumn = {}
 ): PrimeNgTableHeader {
   const header: PrimeNgTableHeader = {
     identifier: {
@@ -258,7 +254,7 @@ export function createDateColumn(
     placeholder?: string;
     styleClass?: string;
     filterStyleClass?: Record<string, string>;
-  } = {}
+  } & NestableColumn = {}
 ): PrimeNgTableHeader {
   const header: PrimeNgTableHeader = {
     identifier: {
@@ -381,7 +377,7 @@ export function createSimpleColumn(
   options: {
     hasSort?: boolean;
     styleClass?: string;
-  } = {}
+  } & NestableColumn = {}
 ): PrimeNgTableHeader {
   return {
     identifier: {

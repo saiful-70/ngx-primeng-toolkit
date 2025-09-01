@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 // ===============================================================================
 // TypeScript Utility Types
@@ -11,9 +11,9 @@ import { z } from 'zod';
  * ```typescript
  * type User = { id: number; name: string; email: string; tags: string[] };
  * type NullableUser = RecursiveNullable<User>;
- * // Result: { 
- * //   id: number | null; 
- * //   name: string | null; 
+ * // Result: {
+ * //   id: number | null;
+ * //   name: string | null;
  * //   email: string | null;
  * //   tags: (string | null)[] | null;
  * // }
@@ -22,17 +22,16 @@ import { z } from 'zod';
 export type RecursiveNullable<Thing> = Thing extends Function
   ? Thing
   : Thing extends Array<infer InferredArrayMember>
-    ? RecursiveNullableArray<InferredArrayMember>
-    : Thing extends Record<string, any>
-      ? RecursiveNullableObject<Thing>
-      : Exclude<Thing, undefined> | null;
+  ? RecursiveNullableArray<InferredArrayMember>
+  : Thing extends Record<string, any>
+  ? RecursiveNullableObject<Thing>
+  : Exclude<Thing, undefined> | null;
 
 type RecursiveNullableObject<Thing extends object> = {
   [Key in keyof Thing]: RecursiveNullable<Thing[Key]>;
 };
 
-interface RecursiveNullableArray<Thing>
-  extends Array<RecursiveNullable<Thing>> {}
+interface RecursiveNullableArray<Thing> extends Array<RecursiveNullable<Thing>> {}
 
 /**
  * Makes all properties of T nullish (T | null | undefined)
@@ -55,11 +54,11 @@ export type Nullish<T> = {
  * ```typescript
  * type User = { id: number; profile: { name: string; age: number }; tags: string[] };
  * type NullishUser = RecursiveNullish<User>;
- * // Result: { 
- * //   id: number | null | undefined; 
- * //   profile: { 
- * //     name: string | null | undefined; 
- * //     age: number | null | undefined 
+ * // Result: {
+ * //   id: number | null | undefined;
+ * //   profile: {
+ * //     name: string | null | undefined;
+ * //     age: number | null | undefined
  * //   } | null | undefined;
  * //   tags: (string | null | undefined)[] | null | undefined;
  * // }
@@ -68,10 +67,10 @@ export type Nullish<T> = {
 export type RecursiveNullish<Thing> = Thing extends Function
   ? Thing
   : Thing extends Array<infer InferredArrayMember>
-    ? RecursiveNullishArray<InferredArrayMember>
-    : Thing extends Record<string, any>
-      ? RecursiveNullishObject<Thing>
-      : Exclude<Thing, null | undefined> | null | undefined;
+  ? RecursiveNullishArray<InferredArrayMember>
+  : Thing extends Record<string, any>
+  ? RecursiveNullishObject<Thing>
+  : Exclude<Thing, null | undefined> | null | undefined;
 
 type RecursiveNullishObject<Thing extends object> = {
   [Key in keyof Thing]: RecursiveNullish<Thing[Key]>;
@@ -84,16 +83,16 @@ interface RecursiveNullishArray<Thing> extends Array<RecursiveNullish<Thing>> {}
  * @template Thing - The type to make recursively partial
  * @example
  * ```typescript
- * type User = { 
- *   id: number; 
- *   profile: { name: string; age: number }; 
+ * type User = {
+ *   id: number;
+ *   profile: { name: string; age: number };
  *   settings: { theme: string; notifications: boolean };
  *   tags: string[];
  * };
  * type PartialUser = RecursivePartial<User>;
- * // Result: { 
- * //   id?: number | undefined; 
- * //   profile?: { name?: string | undefined; age?: number | undefined } | undefined; 
+ * // Result: {
+ * //   id?: number | undefined;
+ * //   profile?: { name?: string | undefined; age?: number | undefined } | undefined;
  * //   settings?: { theme?: string | undefined; notifications?: boolean | undefined } | undefined;
  * //   tags?: (string | undefined)[] | undefined;
  * // }
@@ -102,10 +101,10 @@ interface RecursiveNullishArray<Thing> extends Array<RecursiveNullish<Thing>> {}
 export type RecursivePartial<Thing> = Thing extends Function
   ? Thing
   : Thing extends Array<infer InferredArrayMember>
-    ? RecursivePartialArray<InferredArrayMember>
-    : Thing extends object
-      ? RecursivePartialObject<Thing>
-      : Thing | undefined;
+  ? RecursivePartialArray<InferredArrayMember>
+  : Thing extends object
+  ? RecursivePartialObject<Thing>
+  : Thing | undefined;
 
 type RecursivePartialObject<Thing> = {
   [Key in keyof Thing]?: RecursivePartial<Thing[Key]>;
@@ -120,12 +119,12 @@ interface RecursivePartialArray<Thing> extends Array<RecursivePartial<Thing>> {}
 /**
  * Enumeration for manipulation types in component operations
  * Used for tracking the current operation state in component management
- * 
+ *
  * @example
  * ```typescript
  * // In a component
  * currentOperation: ManipulationType = ManipulationType.Create;
- * 
+ *
  * // Check operation type
  * if (this.currentOperation === ManipulationType.Update) {
  *   // Handle update logic
@@ -136,7 +135,7 @@ export enum ManipulationType {
   /** Creating a new item */
   Create = "Create",
   /** Updating an existing item */
-  Update = "Update", 
+  Update = "Update",
   /** Creating a child item */
   CreateChild = "Create Child",
   /** Deleting an item */
@@ -203,14 +202,14 @@ export interface PaginationParams {
  */
 export interface SortParams {
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }
 
 /**
  * Combined query parameters for API requests
  */
-export type QueryParams = Record<string, string | number | boolean> & 
-  Partial<PaginationParams> & 
+export type QueryParams = Record<string, string | number | boolean> &
+  Partial<PaginationParams> &
   Partial<SortParams>;
 
 // ===============================================================================
@@ -424,11 +423,11 @@ export function createKeyData<K, D>(key: K, data: D): KeyData<K, D> {
  */
 export function isApiResponse<T>(response: any): response is ApiResponse<T> {
   return (
-    typeof response === 'object' &&
+    typeof response === "object" &&
     response !== null &&
-    'data' in response &&
-    'status' in response &&
-    'success' in response
+    "data" in response &&
+    "status" in response &&
+    "success" in response
   );
 }
 
@@ -439,12 +438,12 @@ export function isApiResponse<T>(response: any): response is ApiResponse<T> {
  */
 export function isPaginatedResponse<T>(response: any): response is PaginatedResponse<T> {
   return (
-    typeof response === 'object' &&
+    typeof response === "object" &&
     response !== null &&
-    'data' in response &&
+    "data" in response &&
     Array.isArray(response.data) &&
-    'meta' in response &&
-    typeof response.meta === 'object'
+    "meta" in response &&
+    typeof response.meta === "object"
   );
 }
 
@@ -455,12 +454,12 @@ export function isPaginatedResponse<T>(response: any): response is PaginatedResp
  */
 export function isSimplePagedResponse<T>(response: any): response is PagedDataResponse<T> {
   return (
-    typeof response === 'object' &&
+    typeof response === "object" &&
     response !== null &&
-    'payload' in response &&
+    "payload" in response &&
     Array.isArray(response.payload) &&
-    'totalCount' in response &&
-    typeof response.totalCount === 'number'
+    "totalCount" in response &&
+    typeof response.totalCount === "number"
   );
 }
 
@@ -469,13 +468,19 @@ export function isSimplePagedResponse<T>(response: any): response is PagedDataRe
  * @param response The response to check
  * @returns true if response is PagedDataResponse, false otherwise
  */
-export function isDynamicQueryResponse<T>(response: any): response is DynamicQueryPagedDataResponse<T> {
+export function isDynamicQueryResponse<T>(
+  response: any
+): response is DynamicQueryPagedDataResponse<T> {
   return (
-    typeof response === 'object' &&
+    typeof response === "object" &&
     response !== null &&
-    'data' in response &&
+    "data" in response &&
     Array.isArray(response.data) &&
-    'last_page' in response &&
-    'last_row' in response
+    "last_page" in response &&
+    "last_row" in response
   );
 }
+
+export type NestableColumn = {
+  isNested?: boolean;
+};

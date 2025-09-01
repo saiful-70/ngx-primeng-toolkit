@@ -16,6 +16,7 @@ import {
   FilterTypeMapped,
   dynamicQueryResponseZodSchema
 } from "./types";
+import { routeParamConcat } from "./utils";
 
 /**
  * Initial state factory function for dynamic table
@@ -143,7 +144,7 @@ export class PrimeNgDynamicTableStateHelper<T> {
    * @returns This instance for method chaining
    */
   public setRouteParam(newRouteParam: string): this {
-    this.url = `${this.urlWithOutRouteParam}/${newRouteParam}`;
+    this.url = routeParamConcat(this.urlWithOutRouteParam, newRouteParam);
     return this;
   }
 
