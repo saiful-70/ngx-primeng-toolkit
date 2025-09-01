@@ -137,6 +137,7 @@ export function createTextColumn(
     identifier: {
       label,
       field,
+      isNested: options.isNested,
       hasSort: options.hasSort ?? false,
       styleClass: options.styleClass
     }
@@ -180,6 +181,7 @@ export function createNumericColumn(
     identifier: {
       label,
       field,
+      isNested: options.isNested,
       hasSort: options.hasSort ?? false,
       styleClass: options.styleClass
     }
@@ -220,6 +222,7 @@ export function createBooleanColumn(
     identifier: {
       label,
       field,
+      isNested: options.isNested,
       hasSort: options.hasSort ?? false,
       isBoolean: true,
       styleClass: options.styleClass
@@ -260,6 +263,7 @@ export function createDateColumn(
     identifier: {
       label,
       field,
+      isNested: options.isNested,
       hasSort: options.hasSort ?? false,
       styleClass: options.styleClass
     }
@@ -383,6 +387,7 @@ export function createSimpleColumn(
     identifier: {
       label,
       field,
+      isNested: options.isNested,
       hasSort: options.hasSort ?? false,
       styleClass: options.styleClass
     }
