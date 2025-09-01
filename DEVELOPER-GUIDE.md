@@ -2,333 +2,6 @@
 
 This guide provides detailed information for developers working on the NGX PrimeNG Toolkit library.
 
-## Project Structure
-
-```
-src/
-├── index.ts                      # Main exports
-├── component-data-storage.ts     # Component data storage utilities
-├── component-state.ts            # Component state management
-├── dynamic-table-state-helper.ts # Dynamic table state management
-├── http-context-tokens.ts        # HTTP context tokens
-├── memoized-data-storage.ts      # Memoized data storage class
-├── ng-select-helper.ts           # NgSelect helper utilities
-├── ng-select-utils.ts            # NgSelect initialization utilities
-├── paged-table-state-helper.ts   # Simple paged table state
-├── table-utils.ts               # Table configuration utilities
-└── types.ts                     # Utility types and interfaces
-
-examples/
-└── comprehensive-usage.example.ts # Complete usage examples
-
-README.md                        # User documentation
-DEVELOPER-GUIDE.md              # This file
-package.json                    # Package configuration
-tsconfig.json                   # TypeScript configuration
-tsup.config.ts                  # Build configuration
-```
-
-## Architecture Overview
-
-### Core Components
-
-1. **PrimeNgDynamicTableStateHelper**: Advanced table state management with filtering and sorting
-2. **PrimengPagedDataTableStateHelper**: Simple paged table state management
-3. **MemoizedDataStorage**: HTTP data caching with memoization
-4. **Utility Functions**: Helper functions for creating table configurations and managing data
-3. **Type Definitions**: TypeScript interfaces for strong typing
-
-### State Management
-
-The library uses NgRx Signals for reactive state management:
-
-```typescript
-interface PrimeNgTableState<T> {
-  data: Array<T>;
-  isLoading: boolean;
-  size: number;
-  page: number;
-  totalRecords: number;
-  filter: DynamicQueryFilterDto[];
-  sort: DynamicQuerySortDto[];
-}
-```
-
-### API Integration
-
-The helper expects a specific API contract:
-
-**Request Format (POST)**:
-```typescript
-{
-  size: number;          // Page size
-  page: number;          // Current page (1-based)
-  filter: Array<{
-    field: string;       // Field to filter
-    value: string;       // Filter value
-    type: string;        // Filter operation
-  }>;
-  sort: Array<{
-    field: string;       // Field to sort
-    dir: 'asc' | 'desc'; // Sort direction
-  }>;
-}
-```
-
-**Response Format**:
-```typescript
-{
-  data: T[];           // Array of records
-  last_page: number;   // Total pages
-  last_row: number;    // Total records
-}
-```
-
-## Development Setup
-
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-- TypeScript knowledge
-- Angular and PrimeNG familiarity
-
-### Local Development
-
-1. **Clone and Install**:
-   ```bash
-   git clone <repository-url>
-   cd ngx-primeng-toolkit
-   npm install
-   ```
-
-2. **Development Build**:
-   ```bash
-   npm run dev  # Watch mode
-   ```
-
-3. **Type Checking**:
-   ```bash
-   npm run type-check
-   ```
-
-4. **Production Build**:
-   ```bash
-   npm run build
-   ```
-
-### Testing Your Changes
-
-Since this is a library package, test your changes by:
-
-1. Building the package
-2. Using `npm link` to link locally
-3. Testing in a real Angular project with PrimeNG
-
-## Code Style Guidelines
-
-### TypeScript
-
-- Use strict mode TypeScript
-- Provide comprehensive type definitions
-- Use generic types where appropriate
-- Document all public APIs with JSDoc
-
-### Function Design
-
-- Prefer pure functions
-- Use meaningful parameter names
-- Provide default values for optional parameters
-- Return typed objects/values
-
-### Class Design
-
-- Use readonly properties for public signals
-- Private methods start with `#` or `private`
-- Method chaining where appropriate
-- Clear constructor parameters
-
-## API Design Principles
-
-### Fluent Interface
-
-The main class supports method chaining:
-
-```typescript
-tableState
-  .setUniqueKey('id')
-  .setUrl('/api/data')
-  .patchQueryParams({ active: true })
-  .refreshData();
-```
-
-### Signal-Based Reactivity
-
-Expose state as readonly signals:
-
-```typescript
-readonly data: Signal<Array<T>> = this.state.data;
-readonly isLoading: Signal<boolean> = this.state.isLoading;
-readonly totalRecords: Signal<number> = this.state.totalRecords;
-```
-
-### Utility-First Functions
-
-Provide utility functions for common configurations:
-
-```typescript
-const textColumn = createTextColumn('name', 'Full Name', {
-  placeholder: 'Search names...'
-});
-```
-
-## Error Handling
-
-### API Errors
-
-```typescript
-try {
-  const response = await this.httpClient.post(url, data).toPromise();
-  // Process response
-} catch (error) {
-  patchState(this.state, { data: [] });
-  throw error; // Let consumer handle
-}
-```
-
-### State Validation
-
-```typescript
-if (this.state.isLoading()) {
-  return; // Prevent concurrent requests
-}
-```
-
-## Performance Considerations
-
-### Request Debouncing
-
-The library relies on PrimeNG's built-in debouncing for filter changes.
-
-### Memory Management
-
-- Clean up subscriptions in components
-- Reset state when changing URLs
-- Use signals for reactive updates
-
-### Bundle Size
-
-- Tree-shakeable exports
-- No runtime dependencies
-- Minimal peer dependencies
-
-## Testing Strategy
-
-### Unit Tests
-
-Test individual functions and classes:
-
-```typescript
-describe('PrimeNgDynamicTableStateHelper', () => {
-  it('should create instance with correct initial state', () => {
-    // Test implementation
-  });
-});
-```
-
-### Integration Tests
-
-Test with actual Angular components and PrimeNG tables.
-
-### Type Tests
-
-Ensure TypeScript types work correctly:
-
-```typescript
-// Should compile without errors
-const helper = PrimeNgDynamicTableStateHelper.create<User>({
-  url: '/api/users',
-  httpClient: mockHttpClient
-});
-```
-
-## Release Process
-
-### Version Management
-
-Follow semantic versioning:
-- **Major**: Breaking changes
-- **Minor**: New features (backward compatible)
-- **Patch**: Bug fixes
-
-### Build Process
-
-```bash
-npm run build      # Create distribution files
-npm run type-check # Verify TypeScript
-```
-
-### Publishing
-
-```bash
-npm publish --access public
-```
-
-## Common Patterns
-
-### Basic Table Setup
-
-```typescript
-const tableState = PrimeNgDynamicTableStateHelper.create<DataType>({
-  url: '/api/endpoint',
-  httpClient: this.httpClient
-});
-```
-
-### Dynamic URL Changes
-
-```typescript
-async switchEndpoint(newUrl: string) {
-  this.tableState
-    .setUrl(newUrl)
-    .clearTableData(this.tableRef());
-  
-  await this.tableState.refreshData();
-}
-```
-
-### Query Parameter Management
-
-```typescript
-// Add parameters
-this.tableState.patchQueryParams({ status: 'active' });
-
-// Remove parameters  
-this.tableState.removeQueryParam('status');
-
-// Replace all parameters
-this.tableState.setQueryParams({ newParam: 'value' });
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Import Errors**: Ensure peer dependencies are installed
-2. **Type Errors**: Check generic type parameters
-3. **API Errors**: Verify request/response format
-4. **State Issues**: Check signal reactivity
-
-### Debug Mode
-
-Add console logging to development builds:
-
-```typescript
-if (environment?.development) {
-  console.log('Table state changed:', this.state());
-}
-```
-
 ## Version Management & Release Process
 
 This project uses automated semantic versioning based on commit message conventions. The GitHub Action automatically bumps versions and publishes to NPM based on your commit messages.
@@ -338,6 +11,7 @@ This project uses automated semantic versioning based on commit message conventi
 The commit message format determines which version number gets bumped:
 
 #### Major Version (Breaking Changes)
+
 Use when you make incompatible API changes:
 
 ```bash
@@ -348,10 +22,12 @@ git commit -m "feat: new table API BREAKING CHANGE: completely new table configu
 ```
 
 **Keywords that trigger major version bump:**
+
 - `major:` prefix
 - `BREAKING CHANGE:` in commit message body
 
 #### Minor Version (New Features)
+
 Use when you add functionality in a backward-compatible manner:
 
 ```bash
@@ -362,10 +38,12 @@ git commit -m "feat: add ng-select helper utilities"
 ```
 
 **Keywords that trigger minor version bump:**
+
 - `feat:` prefix
 - `feature:` prefix
 
 #### Patch Version (Bug Fixes)
+
 Use when you make backward-compatible bug fixes:
 
 ```bash
@@ -376,11 +54,13 @@ git commit -m "bug: fix memory leak in memoized data storage"
 ```
 
 **Keywords that trigger patch version bump:**
+
 - `fix:` prefix
 - `patch:` prefix
 - `bug:` prefix
 
 #### No Version Bump
+
 Other commit types won't trigger version bumps but are still good practice:
 
 ```bash
@@ -436,6 +116,335 @@ git push origin hotfix/critical-bug
 ### Version History
 
 Check the [releases page](https://github.com/saiful-70/ngx-primeng-toolkit/releases) to see version history and changelogs.
+
+## Project Structure
+
+```
+src/
+├── index.ts                      # Main exports
+├── component-data-storage.ts     # Component data storage utilities
+├── component-state.ts            # Component state management
+├── dynamic-table-state-helper.ts # Dynamic table state management
+├── http-context-tokens.ts        # HTTP context tokens
+├── memoized-data-storage.ts      # Memoized data storage class
+├── ng-select-helper.ts           # NgSelect helper utilities
+├── ng-select-utils.ts            # NgSelect initialization utilities
+├── paged-table-state-helper.ts   # Simple paged table state
+├── table-utils.ts               # Table configuration utilities
+└── types.ts                     # Utility types and interfaces
+
+examples/
+└── comprehensive-usage.example.ts # Complete usage examples
+
+README.md                        # User documentation
+DEVELOPER-GUIDE.md              # This file
+package.json                    # Package configuration
+tsconfig.json                   # TypeScript configuration
+tsup.config.ts                  # Build configuration
+```
+
+## Architecture Overview
+
+### Core Components
+
+1. **PrimeNgDynamicTableStateHelper**: Advanced table state management with filtering and sorting
+2. **PrimengPagedDataTableStateHelper**: Simple paged table state management
+3. **MemoizedDataStorage**: HTTP data caching with memoization
+4. **Utility Functions**: Helper functions for creating table configurations and managing data
+5. **Type Definitions**: TypeScript interfaces for strong typing
+
+### State Management
+
+The library uses NgRx Signals for reactive state management:
+
+```typescript
+interface PrimeNgTableState<T> {
+  data: Array<T>;
+  isLoading: boolean;
+  size: number;
+  page: number;
+  totalRecords: number;
+  filter: DynamicQueryFilterDto[];
+  sort: DynamicQuerySortDto[];
+}
+```
+
+### API Integration
+
+The helper expects a specific API contract:
+
+**Request Format (POST)**:
+
+```typescript
+{
+  size: number; // Page size
+  page: number; // Current page (1-based)
+  filter: Array<{
+    field: string; // Field to filter
+    value: string; // Filter value
+    type: string; // Filter operation
+  }>;
+  sort: Array<{
+    field: string; // Field to sort
+    dir: "asc" | "desc"; // Sort direction
+  }>;
+}
+```
+
+**Response Format**:
+
+```typescript
+{
+  data: T[];           // Array of records
+  last_page: number;   // Total pages
+  last_row: number;    // Total records
+}
+```
+
+## Development Setup
+
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+- TypeScript knowledge
+- Angular and PrimeNG familiarity
+
+### Local Development
+
+1. **Clone and Install**:
+
+   ```bash
+   git clone <repository-url>
+   cd ngx-primeng-toolkit
+   npm install
+   ```
+
+2. **Development Build**:
+
+   ```bash
+   npm run dev  # Watch mode
+   ```
+
+3. **Type Checking**:
+
+   ```bash
+   npm run type-check
+   ```
+
+4. **Production Build**:
+   ```bash
+   npm run build
+   ```
+
+### Testing Your Changes
+
+Since this is a library package, test your changes by:
+
+1. Building the package
+2. Using `npm link` to link locally
+3. Testing in a real Angular project with PrimeNG
+
+## Code Style Guidelines
+
+### TypeScript
+
+- Use strict mode TypeScript
+- Provide comprehensive type definitions
+- Use generic types where appropriate
+- Document all public APIs with JSDoc
+
+### Function Design
+
+- Prefer pure functions
+- Use meaningful parameter names
+- Provide default values for optional parameters
+- Return typed objects/values
+
+### Class Design
+
+- Use readonly properties for public signals
+- Private methods start with `#` or `private`
+- Method chaining where appropriate
+- Clear constructor parameters
+
+## API Design Principles
+
+### Fluent Interface
+
+The main class supports method chaining:
+
+```typescript
+tableState.setUniqueKey("id").setUrl("/api/data").patchQueryParams({ active: true }).refreshData();
+```
+
+### Signal-Based Reactivity
+
+Expose state as readonly signals:
+
+```typescript
+readonly data: Signal<Array<T>> = this.state.data;
+readonly isLoading: Signal<boolean> = this.state.isLoading;
+readonly totalRecords: Signal<number> = this.state.totalRecords;
+```
+
+### Utility-First Functions
+
+Provide utility functions for common configurations:
+
+```typescript
+const textColumn = createTextColumn("name", "Full Name", {
+  placeholder: "Search names..."
+});
+```
+
+## Error Handling
+
+### API Errors
+
+```typescript
+try {
+  const response = await this.httpClient.post(url, data).toPromise();
+  // Process response
+} catch (error) {
+  patchState(this.state, { data: [] });
+  throw error; // Let consumer handle
+}
+```
+
+### State Validation
+
+```typescript
+if (this.state.isLoading()) {
+  return; // Prevent concurrent requests
+}
+```
+
+## Performance Considerations
+
+### Request Debouncing
+
+The library relies on PrimeNG's built-in debouncing for filter changes.
+
+### Memory Management
+
+- Clean up subscriptions in components
+- Reset state when changing URLs
+- Use signals for reactive updates
+
+### Bundle Size
+
+- Tree-shakeable exports
+- No runtime dependencies
+- Minimal peer dependencies
+
+## Testing Strategy
+
+### Unit Tests
+
+Test individual functions and classes:
+
+```typescript
+describe("PrimeNgDynamicTableStateHelper", () => {
+  it("should create instance with correct initial state", () => {
+    // Test implementation
+  });
+});
+```
+
+### Integration Tests
+
+Test with actual Angular components and PrimeNG tables.
+
+### Type Tests
+
+Ensure TypeScript types work correctly:
+
+```typescript
+// Should compile without errors
+const helper = PrimeNgDynamicTableStateHelper.create<User>({
+  url: "/api/users",
+  httpClient: mockHttpClient
+});
+```
+
+## Release Process
+
+### Version Management
+
+Follow semantic versioning:
+
+- **Major**: Breaking changes
+- **Minor**: New features (backward compatible)
+- **Patch**: Bug fixes
+
+### Build Process
+
+```bash
+npm run build      # Create distribution files
+npm run type-check # Verify TypeScript
+```
+
+### Publishing
+
+```bash
+npm publish --access public
+```
+
+## Common Patterns
+
+### Basic Table Setup
+
+```typescript
+const tableState = PrimeNgDynamicTableStateHelper.create<DataType>({
+  url: "/api/endpoint",
+  httpClient: this.httpClient
+});
+```
+
+### Dynamic URL Changes
+
+```typescript
+async switchEndpoint(newUrl: string) {
+  this.tableState
+    .setUrl(newUrl)
+    .clearTableData(this.tableRef());
+
+  await this.tableState.refreshData();
+}
+```
+
+### Query Parameter Management
+
+```typescript
+// Add parameters
+this.tableState.patchQueryParams({ status: "active" });
+
+// Remove parameters
+this.tableState.removeQueryParam("status");
+
+// Replace all parameters
+this.tableState.setQueryParams({ newParam: "value" });
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Import Errors**: Ensure peer dependencies are installed
+2. **Type Errors**: Check generic type parameters
+3. **API Errors**: Verify request/response format
+4. **State Issues**: Check signal reactivity
+
+### Debug Mode
+
+Add console logging to development builds:
+
+```typescript
+if (environment?.development) {
+  console.log("Table state changed:", this.state());
+}
+```
 
 ## Contributing
 
