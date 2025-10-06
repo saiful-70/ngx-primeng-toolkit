@@ -80,3 +80,46 @@ export class ReloadNotification {
     return new ReloadNotification();
   }
 }
+
+type TreeNode<T> = T & { children: TreeNode<T>[] };
+
+export function createHierarchicalTree<T extends Record<string, any>>(
+  data: Array<T>,
+  idKey: string,
+  parentIdKey: string
+): TreeNode<T>[] {
+  if (!Array.isArray(data)) {
+    throw new Error("data must be an array");
+  }
+
+  const tracker = new Map<any, TreeNode<T>>();
+
+  data.forEach((item: T) => {
+    if (!Object.hasOwn(item, idKey) || !Object.hasOwn(item, parentIdKey)) {
+      throw new Error("idKey or parentIdKey is missing", { cause: item });
+    }
+    const node: TreeNode<T> = { ...item, children: [] };
+    tracker.set(item[idKey], node);
+  });
+
+  const rootNodes: TreeNode<T>[] = [];
+
+  data.forEach((item) => {
+    if (item[parentIdKey] === null) {
+      const parentData = tracker.get(item[idKey]);
+      if (parentData) {
+        rootNodes.push(parentData);
+      }
+    } else {
+      const parent = tracker.get(item[parentIdKey]);
+      if (parent) {
+        const childData = tracker.get(item[idKey]);
+        if (childData) {
+          parent.children.push(childData);
+        }
+      }
+    }
+  });
+
+  return rootNodes;
+}
