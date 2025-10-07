@@ -4,14 +4,14 @@ import { ManipulationType } from "./types";
 /**
  * A reactive state management class for Angular components using signals
  * Provides common component state properties and computed values
- * 
+ *
  * @example
  * ```typescript
  * @Component({
  *   selector: 'app-user-management',
  *   template: `
  *     <h2>{{ componentState.componentTitleWithManipulationType() }}</h2>
- *     <p-button 
+ *     <p-button
  *       [loading]="componentState.isAnyAjaxOperationRunning()"
  *       [disabled]="componentState.isAnyAjaxOperationRunning()">
  *       Save
@@ -36,6 +36,11 @@ export class ComponentState {
   readonly isCreateDialogOpen = signal<boolean>(false);
   readonly manipulationType = signal<ManipulationType>(ManipulationType.Create);
   readonly componentTitle = signal<string>("");
+
+  readonly isDataManipulationPageOpen = signal<boolean>(false);
+  readonly isCreateOrUpdatePageOpen = signal<boolean>(false);
+  readonly isUpdatePageOpen = signal<boolean>(false);
+  readonly isCreatePageOpen = signal<boolean>(false);
 
   /**
    * Updates the component title
@@ -183,7 +188,11 @@ export class ComponentState {
    * Computed signal that indicates if any dialog is open
    */
   readonly isAnyDialogOpen = computed(() => {
-    return this.isCreateOrUpdateDialogOpen() || this.isUpdateDialogOpen() || this.isCreateDialogOpen();
+    return (
+      this.isCreateOrUpdateDialogOpen() ||
+      this.isUpdateDialogOpen() ||
+      this.isCreateDialogOpen()
+    );
   });
 
   /**
