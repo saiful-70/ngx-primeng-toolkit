@@ -81,8 +81,45 @@ export class ReloadNotification {
   }
 }
 
-type TreeNode<T> = T & { children: TreeNode<T>[] };
+/**
+ * Represents a tree node structure compatible with PrimeNG TreeNode
+ * @template T The type of data stored in the node
+ */
+export type TreeNode<T> = {
+  data: T;
+  children?: TreeNode<T>[];
+};
 
+/**
+ * Creates a hierarchical tree structure from flat array data
+ *
+ * Converts a flat array of items with parent-child relationships into a tree structure
+ * compatible with PrimeNG Tree component.
+ *
+ * @template T The type of items in the array
+ * @param data Array of flat data items
+ * @param idKey The property name that contains the unique identifier
+ * @param parentIdKey The property name that contains the parent identifier
+ * @returns Array of root tree nodes with nested children
+ *
+ * @example
+ * ```typescript
+ * interface Category {
+ *   id: number;
+ *   name: string;
+ *   parentCategoryId: number | null;
+ * }
+ *
+ * const categories: Category[] = [
+ *   { id: 1, name: 'Electronics', parentCategoryId: null },
+ *   { id: 2, name: 'Computers', parentCategoryId: 1 },
+ *   { id: 3, name: 'Laptops', parentCategoryId: 2 }
+ * ];
+ *
+ * const tree = createHierarchicalTree(categories, 'id', 'parentCategoryId');
+ * // Result: Tree structure with Electronics -> Computers -> Laptops
+ * ```
+ */
 export function createHierarchicalTree<T extends Record<string, any>>(
   data: Array<T>,
   idKey: string,
@@ -92,32 +129,35 @@ export function createHierarchicalTree<T extends Record<string, any>>(
     throw new Error("data must be an array");
   }
 
-  const tracker = new Map<any, TreeNode<T>>();
-
-  data.forEach((item: T) => {
-    if (!Object.hasOwn(item, idKey) || !Object.hasOwn(item, parentIdKey)) {
-      throw new Error("idKey or parentIdKey is missing", { cause: item });
-    }
-    const node: TreeNode<T> = { ...item, children: [] };
-    tracker.set(item[idKey], node);
-  });
+  // Create a map for quick lookup and convert to TreeNode format
+  const categoryMap = new Map<string | number, TreeNode<T>>(
+    data.map((item) => {
+      if (!Object.hasOwn(item, idKey) || !Object.hasOwn(item, parentIdKey)) {
+        throw new Error("idKey or parentIdKey is missing", { cause: item });
+      }
+      return [
+        item[idKey],
+        {
+          data: item,
+          children: [],
+        },
+      ];
+    })
+  );
 
   const rootNodes: TreeNode<T>[] = [];
 
+  // Build the tree by linking children to their parents
   data.forEach((item) => {
-    if (item[parentIdKey] === null) {
-      const parentData = tracker.get(item[idKey]);
-      if (parentData) {
-        rootNodes.push(parentData);
-      }
+    const parentId = item[parentIdKey];
+
+    if (parentId != null && categoryMap.has(parentId)) {
+      // Add to parent's children list
+      const parent = categoryMap.get(parentId)!;
+      parent.children!.push(categoryMap.get(item[idKey])!);
     } else {
-      const parent = tracker.get(item[parentIdKey]);
-      if (parent) {
-        const childData = tracker.get(item[idKey]);
-        if (childData) {
-          parent.children.push(childData);
-        }
-      }
+      // No parent means this is a root node
+      rootNodes.push(categoryMap.get(item[idKey])!);
     }
   });
 
