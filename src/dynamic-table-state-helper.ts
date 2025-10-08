@@ -14,7 +14,7 @@ import {
   PrimeNgTableState,
   PrimeNgTableStateHelperQueryParam,
   FilterTypeMapped,
-  dynamicQueryResponseZodSchema
+  dynamicQueryResponseZodSchema,
 } from "./types";
 import { routeParamConcat } from "./utils";
 
@@ -29,8 +29,29 @@ function initialDynamicState<T>(): PrimeNgTableState<T> {
     size: 15,
     page: 1,
     filter: [],
-    sort: []
+    sort: [],
   };
+}
+
+/**
+ * Calculates pagination parameters from PrimeNG table lazy load event
+ * @param event - The PrimeNG table lazy load event
+ * @param defaultValue - Default pagination values if event is null
+ * @returns Object containing page and limit for pagination
+ */
+export function calculatePrimengTablePagination(
+  event: TableLazyLoadEvent | null,
+  defaultValue: { page: number; limit: number } = { page: 1, limit: 15 }
+) {
+  if (!event) {
+    return defaultValue;
+  }
+  const page =
+    event.first && event.rows ? Math.floor(event.first / event.rows) : 0;
+
+  const limit = event.rows ?? 15;
+
+  return { page: page + 1, limit };
 }
 
 /**
@@ -71,7 +92,9 @@ type PrimeNgDynamicTableStateOpts = {
  * ```
  */
 export class PrimeNgDynamicTableStateHelper<T> {
-  private readonly state = signalState<PrimeNgTableState<T>>(initialDynamicState<T>());
+  private readonly state = signalState<PrimeNgTableState<T>>(
+    initialDynamicState<T>()
+  );
   private urlWithOutRouteParam: string;
   private skipLoadingSpinner: boolean;
   readonly #uniqueKey = signal("id");
@@ -173,7 +196,9 @@ export class PrimeNgDynamicTableStateHelper<T> {
    * @param newQueryParams - New query parameters
    * @returns This instance for method chaining
    */
-  public setQueryParams(newQueryParams: PrimeNgTableStateHelperQueryParam): this {
+  public setQueryParams(
+    newQueryParams: PrimeNgTableStateHelperQueryParam
+  ): this {
     this.#queryParams = newQueryParams;
     return this;
   }
@@ -194,16 +219,18 @@ export class PrimeNgDynamicTableStateHelper<T> {
         Object.keys(event.multiSortMeta || {}).length > 0
           ? (event.multiSortMeta || []).map((sort: any) => ({
               field: sort.field,
-              dir: (sort.order === 1 ? "asc" : "desc") as "asc" | "desc"
+              dir: (sort.order === 1 ? "asc" : "desc") as "asc" | "desc",
             }))
           : event.sortField
           ? [
               {
                 field: event.sortField,
-                dir: ((event.sortOrder || 1) === 1 ? "asc" : "desc") as "asc" | "desc"
-              }
+                dir: ((event.sortOrder || 1) === 1 ? "asc" : "desc") as
+                  | "asc"
+                  | "desc",
+              },
             ]
-          : []
+          : [],
     });
 
     await this.fetchData(this.dtoBuilder());
@@ -222,7 +249,7 @@ export class PrimeNgDynamicTableStateHelper<T> {
       totalRecords: 0,
       page: 1,
       filter: [],
-      sort: []
+      sort: [],
     });
 
     if (table) {
@@ -257,11 +284,16 @@ export class PrimeNgDynamicTableStateHelper<T> {
         params.append(key, String(value));
       });
 
-      const urlWithParams = params.toString() ? `${this.url}?${params.toString()}` : this.url;
+      const urlWithParams = params.toString()
+        ? `${this.url}?${params.toString()}`
+        : this.url;
 
       const response = await firstValueFrom(
         this.httpClient.post(urlWithParams, dto, {
-          context: new HttpContext().set(SkipLoadingSpinner, this.skipLoadingSpinner)
+          context: new HttpContext().set(
+            SkipLoadingSpinner,
+            this.skipLoadingSpinner
+          ),
         })
       );
 
@@ -270,13 +302,13 @@ export class PrimeNgDynamicTableStateHelper<T> {
       patchState(this.state, {
         data: validatedResponse.data,
         totalRecords: validatedResponse.last_row,
-        isLoading: false
+        isLoading: false,
       });
     } catch (error) {
       patchState(this.state, {
         data: [],
         totalRecords: 0,
-        isLoading: false
+        isLoading: false,
       });
       throw error;
     }
@@ -290,7 +322,7 @@ export class PrimeNgDynamicTableStateHelper<T> {
       size: this.state.size(),
       page: this.state.page(),
       filter: this.state.filter(),
-      sort: this.state.sort()
+      sort: this.state.sort(),
     };
   }
 
@@ -306,14 +338,19 @@ export class PrimeNgDynamicTableStateHelper<T> {
       if (!filterData) return;
 
       const processFilter = (filter: FilterMetadata) => {
-        if (filter.value === null || filter.value === undefined || filter.value === "") return;
+        if (
+          filter.value === null ||
+          filter.value === undefined ||
+          filter.value === ""
+        )
+          return;
 
         const mappedType = this.evaluateInput(filter.matchMode || "contains");
         if (mappedType) {
           filters.push({
             field,
             value: String(filter.value),
-            type: mappedType
+            type: mappedType,
           });
         }
       };
@@ -344,7 +381,7 @@ export class PrimeNgDynamicTableStateHelper<T> {
       greaterThan: ">",
       lessThan: "<",
       greaterThanOrEqual: ">=",
-      lessThanOrEqual: "<="
+      lessThanOrEqual: "<=",
     };
 
     return filterMap[input] || null;
