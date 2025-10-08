@@ -410,6 +410,27 @@ export const NumberStringKeyDataSchema = z.object({
 
 export type NumberStringKeyData = z.infer<typeof NumberStringKeyDataSchema>;
 
+/**
+ * Zod schema for nullable API response validation
+ * @template T The Zod schema type for the payload
+ * @param payloadSchema The Zod schema for the payload data
+ * @returns Zod schema for nullable API response
+ */
+export const NullableApiResponseSchema = <T extends z.ZodTypeAny>(
+  payloadSchema: T
+) =>
+  z.object({
+    payload: payloadSchema.nullable(),
+  });
+
+/**
+ * Type for nullable API response
+ * @template T The type of the payload data
+ */
+export type NullableApiResponse<T> = {
+  payload: T | null;
+};
+
 // ===============================================================================
 // Utility Functions and Type Guards
 // ===============================================================================
