@@ -1,5 +1,10 @@
 import { SelectItem } from "primeng/api";
-import { StringFilterType, NumericFilterType, PrimeNgTableHeader, NestableColumn } from "./types";
+import {
+  StringFilterType,
+  NumericFilterType,
+  PrimeNgTableHeader,
+  NestableColumn,
+} from "./types";
 
 /**
  * Creates PrimeNG SelectItem array for numeric filter match modes
@@ -17,43 +22,43 @@ export function createPrimengNumberMatchModes(
       value: "equals",
       title: "Equals",
       styleClass: styleClass,
-      disabled: disabled
+      disabled: disabled,
     },
     {
       label: "Not Equals",
       value: "notEquals",
       title: "Not Equals",
       styleClass: styleClass,
-      disabled: disabled
+      disabled: disabled,
     },
     {
       label: "Greater Than",
       value: "greaterThan",
       title: "Greater Than",
       styleClass: styleClass,
-      disabled: disabled
+      disabled: disabled,
     },
     {
       label: "Greater Than Or Equals",
       value: "greaterThanOrEqual",
       title: "Greater Than Or Equals",
       styleClass: styleClass,
-      disabled: disabled
+      disabled: disabled,
     },
     {
       label: "Less Than",
       value: "lessThan",
       title: "Less Than",
       styleClass: styleClass,
-      disabled: disabled
+      disabled: disabled,
     },
     {
       label: "Less Than Or Equals",
       value: "lessThanOrEqual",
       title: "Less Than Or Equals",
       styleClass: styleClass,
-      disabled: disabled
-    }
+      disabled: disabled,
+    },
   ];
 }
 
@@ -73,43 +78,43 @@ export function createPrimengStringMatchModes(
       value: "contains",
       title: "Contains",
       styleClass: styleClass,
-      disabled: disabled
+      disabled: disabled,
     },
     {
       label: "Not Contains",
       value: "notContains",
       title: "Not Contains",
       styleClass: styleClass,
-      disabled: disabled
+      disabled: disabled,
     },
     {
       label: "Starts With",
       value: "startsWith",
       title: "Starts With",
       styleClass: styleClass,
-      disabled: disabled
+      disabled: disabled,
     },
     {
       label: "Not Starts With",
       value: "notStartsWith",
       title: "Not Starts With",
       styleClass: styleClass,
-      disabled: disabled
+      disabled: disabled,
     },
     {
       label: "Ends With",
       value: "endsWith",
       title: "Ends With",
       styleClass: styleClass,
-      disabled: disabled
+      disabled: disabled,
     },
     {
       label: "Not Ends With",
       value: "notEndsWith",
       title: "Not Ends With",
       styleClass: styleClass,
-      disabled: disabled
-    }
+      disabled: disabled,
+    },
   ];
 }
 
@@ -139,18 +144,19 @@ export function createTextColumn(
       field,
       isNested: options.isNested,
       hasSort: options.hasSort ?? false,
-      styleClass: options.styleClass
-    }
+      styleClass: options.styleClass,
+    },
   };
 
   if (options.hasFilter ?? false) {
     header.filter = {
       type: "text",
       placeholder: options.placeholder ?? `Search by ${label.toLowerCase()}`,
-      matchModeOptions: options.matchModeOptions ?? createPrimengStringMatchModes(),
+      matchModeOptions:
+        options.matchModeOptions ?? createPrimengStringMatchModes(),
       defaultMatchMode: options.defaultMatchMode ?? "contains",
       ariaLabel: `Filter by ${label}`,
-      styleClass: options.filterStyleClass
+      styleClass: options.filterStyleClass,
     };
   }
 
@@ -183,18 +189,19 @@ export function createNumericColumn(
       field,
       isNested: options.isNested,
       hasSort: options.hasSort ?? false,
-      styleClass: options.styleClass
-    }
+      styleClass: options.styleClass,
+    },
   };
 
   if (options.hasFilter ?? false) {
     header.filter = {
       type: "numeric",
       placeholder: options.placeholder ?? `Filter by ${label.toLowerCase()}`,
-      matchModeOptions: options.matchModeOptions ?? createPrimengNumberMatchModes(),
+      matchModeOptions:
+        options.matchModeOptions ?? createPrimengNumberMatchModes(),
       defaultMatchMode: options.defaultMatchMode ?? "equals",
       ariaLabel: `Filter by ${label}`,
-      styleClass: options.filterStyleClass
+      styleClass: options.filterStyleClass,
     };
   }
 
@@ -225,8 +232,8 @@ export function createBooleanColumn(
       isNested: options.isNested,
       hasSort: options.hasSort ?? false,
       isBoolean: true,
-      styleClass: options.styleClass
-    }
+      styleClass: options.styleClass,
+    },
   };
 
   if (options.hasFilter ?? false) {
@@ -234,7 +241,7 @@ export function createBooleanColumn(
       type: "boolean",
       defaultMatchMode: "equals",
       ariaLabel: `Filter by ${label}`,
-      styleClass: options.filterStyleClass
+      styleClass: options.filterStyleClass,
     };
   }
 
@@ -242,7 +249,7 @@ export function createBooleanColumn(
 }
 
 /**
- * Creates a complete table header configuration for date columns
+ * Creates a complete table header configuration for date columns (date only)
  * @param field - The field name for the column
  * @param label - Display label for the column header
  * @param options - Additional configuration options
@@ -265,8 +272,9 @@ export function createDateColumn(
       field,
       isNested: options.isNested,
       hasSort: options.hasSort ?? false,
-      styleClass: options.styleClass
-    }
+      isDate: true,
+      styleClass: options.styleClass,
+    },
   };
 
   if (options.hasFilter ?? false) {
@@ -275,7 +283,91 @@ export function createDateColumn(
       placeholder: options.placeholder ?? `Select ${label.toLowerCase()}`,
       defaultMatchMode: "equals",
       ariaLabel: `Filter by ${label}`,
-      styleClass: options.filterStyleClass
+      styleClass: options.filterStyleClass,
+    };
+  }
+
+  return header;
+}
+
+/**
+ * Creates a complete table header configuration for datetime columns (date and time)
+ * @param field - The field name for the column
+ * @param label - Display label for the column header
+ * @param options - Additional configuration options
+ * @returns Complete PrimeNgTableHeader configuration
+ */
+export function createDateTimeColumn(
+  field: string,
+  label: string,
+  options: {
+    hasSort?: boolean;
+    hasFilter?: boolean;
+    placeholder?: string;
+    styleClass?: string;
+    filterStyleClass?: Record<string, string>;
+  } & NestableColumn = {}
+): PrimeNgTableHeader {
+  const header: PrimeNgTableHeader = {
+    identifier: {
+      label,
+      field,
+      isNested: options.isNested,
+      hasSort: options.hasSort ?? false,
+      isDateTime: true,
+      styleClass: options.styleClass,
+    },
+  };
+
+  if (options.hasFilter ?? false) {
+    header.filter = {
+      type: "date",
+      placeholder: options.placeholder ?? `Select ${label.toLowerCase()}`,
+      defaultMatchMode: "equals",
+      ariaLabel: `Filter by ${label}`,
+      styleClass: options.filterStyleClass,
+    };
+  }
+
+  return header;
+}
+
+/**
+ * Creates a complete table header configuration for time-only columns
+ * @param field - The field name for the column
+ * @param label - Display label for the column header
+ * @param options - Additional configuration options
+ * @returns Complete PrimeNgTableHeader configuration
+ */
+export function createTimeColumn(
+  field: string,
+  label: string,
+  options: {
+    hasSort?: boolean;
+    hasFilter?: boolean;
+    placeholder?: string;
+    styleClass?: string;
+    filterStyleClass?: Record<string, string>;
+  } & NestableColumn = {}
+): PrimeNgTableHeader {
+  const header: PrimeNgTableHeader = {
+    identifier: {
+      label,
+      field,
+      isNested: options.isNested,
+      hasSort: options.hasSort ?? false,
+      isTimeOnly: true,
+      styleClass: options.styleClass,
+    },
+  };
+
+  if (options.hasFilter ?? false) {
+    header.filter = {
+      type: "text",
+      placeholder: options.placeholder ?? `Filter by ${label.toLowerCase()}`,
+      defaultMatchMode: "contains",
+      ariaLabel: `Filter by ${label}`,
+      styleClass: options.filterStyleClass,
     };
   }
 
@@ -307,8 +399,8 @@ export function createDropdownColumn(
       label,
       field,
       hasSort: options.hasSort ?? false,
-      styleClass: options.styleClass
-    }
+      styleClass: options.styleClass,
+    },
   };
 
   if (options.hasFilter ?? false) {
@@ -318,7 +410,7 @@ export function createDropdownColumn(
       matchModeOptions: dropdownOptions,
       defaultMatchMode: "equals",
       ariaLabel: `Filter by ${label}`,
-      styleClass: options.filterStyleClass
+      styleClass: options.filterStyleClass,
     };
   }
 
@@ -350,8 +442,8 @@ export function createMultiselectColumn(
       label,
       field,
       hasSort: options.hasSort ?? false,
-      styleClass: options.styleClass
-    }
+      styleClass: options.styleClass,
+    },
   };
 
   if (options.hasFilter ?? false) {
@@ -361,7 +453,7 @@ export function createMultiselectColumn(
       matchModeOptions: multiselectOptions,
       defaultMatchMode: "equals",
       ariaLabel: `Filter by ${label}`,
-      styleClass: options.filterStyleClass
+      styleClass: options.filterStyleClass,
     };
   }
 
@@ -389,8 +481,8 @@ export function createSimpleColumn(
       field,
       isNested: options.isNested,
       hasSort: options.hasSort ?? false,
-      styleClass: options.styleClass
-    }
+      styleClass: options.styleClass,
+    },
   };
 }
 
@@ -399,7 +491,9 @@ export function createSimpleColumn(
  * @param headers - Array of table header configurations
  * @returns Array of merged headers
  */
-export function mergeTableHeaders(...headers: PrimeNgTableHeader[]): PrimeNgTableHeader[] {
+export function mergeTableHeaders(
+  ...headers: PrimeNgTableHeader[]
+): PrimeNgTableHeader[] {
   return headers;
 }
 
@@ -415,7 +509,7 @@ export function createBooleanSelectItems(
 ): SelectItem[] {
   return [
     { label: trueLabel, value: true },
-    { label: falseLabel, value: false }
+    { label: falseLabel, value: false },
   ];
 }
 
@@ -429,6 +523,6 @@ export function createStatusSelectItems(
 ): SelectItem[] {
   return Object.entries(statusOptions).map(([value, label]) => ({
     label,
-    value: isNaN(Number(value)) ? value : Number(value)
+    value: isNaN(Number(value)) ? value : Number(value),
   }));
 }
