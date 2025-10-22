@@ -123,7 +123,8 @@ export type TreeNode<T> = {
 export function createHierarchicalTree<T extends Record<string, any>>(
   data: Array<T>,
   idKey: string,
-  parentIdKey: string
+  parentIdKey: string,
+  expanded: boolean = false
 ): TreeNode<T>[] {
   if (!Array.isArray(data)) {
     throw new Error("data must be an array");
@@ -140,6 +141,7 @@ export function createHierarchicalTree<T extends Record<string, any>>(
         {
           data: item,
           children: [],
+          expanded,
         },
       ];
     })
