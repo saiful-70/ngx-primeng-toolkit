@@ -23,6 +23,7 @@ type NgSelectHelperOpts = {
   httpClient: HttpClient;
   destroyRef: DestroyRef;
   usePostRequest: boolean;
+  initialSearchText?: string;
   limit?: number;
   useCache?: boolean;
   skipLoadingSpinner?: boolean;
@@ -46,26 +47,14 @@ type NgSelectHelperQueryParam = Record<string, string | number | boolean>;
  * Body type for NgSelectHelper POST requests
  */
 type NgSelectHelperBody =
-  | Array<
-      | string
-      | number
-      | boolean
-      | null
-      | Record<string, string | number | boolean | null>
-    >
+  | Array<string | number | boolean | null | Record<string, string | number | boolean | null>>
   | Record<
       string,
       | string
       | number
       | boolean
       | null
-      | Array<
-          | string
-          | number
-          | boolean
-          | null
-          | Record<string, string | number | boolean | null>
-        >
+      | Array<string | number | boolean | null | Record<string, string | number | boolean | null>>
     >;
 
 /**
@@ -84,10 +73,7 @@ type CacheKey = {
  * Paged data response specifically for ng-select
  */
 export class NgSelectPagedDataResponse<TData> {
-  constructor(
-    public readonly payload: Array<TData>,
-    public readonly totalCount: number
-  ) {}
+  constructor(public readonly payload: Array<TData>, public readonly totalCount: number) {}
 }
 
 /**
@@ -110,9 +96,9 @@ const defaultResetOpts: NgSelectHelperResetOpts = {
 /**
  * NgSelectHelper class for managing ng-select components with HTTP data loading,
  * pagination, caching, and search functionality using Angular signals
- * 
+ *
  * @template TData The type of data items in the select options
- * 
+ *
  * @example
  * ```typescript
  * interface User {
@@ -120,7 +106,7 @@ const defaultResetOpts: NgSelectHelperResetOpts = {
  *   name: string;
  *   email: string;
  * }
- * 
+ *
  * @Component({
  *   selector: 'app-user-select',
  *   template: `
@@ -140,7 +126,7 @@ const defaultResetOpts: NgSelectHelperResetOpts = {
  * export class UserSelectComponent implements OnInit {
  *   private httpClient = inject(HttpClient);
  *   private destroyRef = inject(DestroyRef);
- *   
+ *
  *   selectHelper = NgSelectHelper.create<User>({
  *     ajaxUrl: '/api/users',
  *     httpClient: this.httpClient,
@@ -148,7 +134,7 @@ const defaultResetOpts: NgSelectHelperResetOpts = {
  *     usePostRequest: false,
  *     limit: 20
  *   });
- *   
+ *
  *   ngOnInit() {
  *     this.selectHelper.init();
  *   }
@@ -163,8 +149,10 @@ export class NgSelectHelper<TData> {
     public readonly usePostRequest = false,
     limit: number = 50,
     private readonly useCache: boolean = true,
-    private skipLoadingSpinner: boolean = true
+    private skipLoadingSpinner: boolean = true,
+    initialSearchText: string = ""
   ) {
+    this.#searchText = initialSearchText;
     this.#originalAjaxUrl = ajaxUrl;
     this.#limit = limit > 0 ? limit : 50;
     this.destroyRef.onDestroy(() => {
@@ -216,7 +204,8 @@ export class NgSelectHelper<TData> {
     usePostRequest,
     limit = 50,
     useCache = true,
-    skipLoadingSpinner = true
+    skipLoadingSpinner = true,
+    initialSearchText = ""
   }: NgSelectHelperOpts): NgSelectHelper<T> {
     return new NgSelectHelper<T>(
       ajaxUrl,
@@ -225,7 +214,8 @@ export class NgSelectHelper<TData> {
       usePostRequest,
       limit,
       useCache,
-      skipLoadingSpinner
+      skipLoadingSpinner,
+      initialSearchText
     );
   }
 
@@ -245,8 +235,7 @@ export class NgSelectHelper<TData> {
    * @returns This instance for method chaining
    */
   public setDebounceTimeInSecond(debounceTimeInSecond: number): this {
-    this.#debounceTimeInSec =
-      debounceTimeInSecond > 0 ? debounceTimeInSecond : 1;
+    this.#debounceTimeInSec = debounceTimeInSecond > 0 ? debounceTimeInSecond : 1;
     return this;
   }
 
@@ -295,9 +284,7 @@ export class NgSelectHelper<TData> {
       ? this.#originalAjaxUrl.slice(0, -1)
       : this.#originalAjaxUrl;
 
-    let routeParam = newRouteParam.startsWith("/")
-      ? newRouteParam.slice(1)
-      : newRouteParam;
+    let routeParam = newRouteParam.startsWith("/") ? newRouteParam.slice(1) : newRouteParam;
 
     this.ajaxUrl = `${baseUrl}/${routeParam}`;
 
@@ -475,11 +462,9 @@ export class NgSelectHelper<TData> {
             return of(null);
           }
 
-          return this.loadDataFromApi(
-            this.page,
-            this.#limit,
-            this.#searchText
-          ).pipe(catchError(() => of(null)));
+          return this.loadDataFromApi(this.page, this.#limit, this.#searchText).pipe(
+            catchError(() => of(null))
+          );
         })
       )
       .subscribe({
@@ -536,14 +521,10 @@ export class NgSelectHelper<TData> {
     let req: Observable<NgSelectPagedDataResponse<TData> | null>;
 
     if (this.usePostRequest) {
-      req = this.httpClient.post<NgSelectPagedDataResponse<TData>>(
-        key.ajaxUrl,
-        key.body,
-        {
-          params: key.queryParams,
-          context: new HttpContext().set(SkipLoadingSpinner, this.skipLoadingSpinner)
-        }
-      );
+      req = this.httpClient.post<NgSelectPagedDataResponse<TData>>(key.ajaxUrl, key.body, {
+        params: key.queryParams,
+        context: new HttpContext().set(SkipLoadingSpinner, this.skipLoadingSpinner)
+      });
     } else {
       req = this.httpClient.get<NgSelectPagedDataResponse<TData>>(key.ajaxUrl, {
         params: key.queryParams,
@@ -593,9 +574,7 @@ export class NgSelectHelper<TData> {
    * Updates state after successful initial API call
    * @param data Response data
    */
-  private updateStateOnSuccessfulInitialApiCall(
-    data: NgSelectPagedDataResponse<TData>
-  ): void {
+  private updateStateOnSuccessfulInitialApiCall(data: NgSelectPagedDataResponse<TData>): void {
     this.#loadedData.set(new NgSelectPagedDataResponse(data.payload, data.totalCount));
     this.#totalCount = data.totalCount;
     this.#isLastApiCallSuccessful = true;
@@ -605,9 +584,7 @@ export class NgSelectHelper<TData> {
    * Updates state after successful subsequent API call
    * @param data Response data
    */
-  private updateStateOnSuccessfulSubsequentApiCall(
-    data: NgSelectPagedDataResponse<TData>
-  ): void {
+  private updateStateOnSuccessfulSubsequentApiCall(data: NgSelectPagedDataResponse<TData>): void {
     this.#loadedData.update((val) => {
       return new NgSelectPagedDataResponse<TData>(
         [...val.payload, ...data.payload],
