@@ -448,6 +448,11 @@ export class NgSelectHelper<TData> {
         }
       });
 
+    // Trigger initial search if initialSearchText was provided
+    if (this.#searchText !== "") {
+      this.inputSubject.next(this.#searchText);
+    }
+
     // Handle load more requests
     this.#loadMoreDataSubject
       .pipe(
