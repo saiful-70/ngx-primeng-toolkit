@@ -81,6 +81,13 @@ export class ReloadNotification {
   }
 }
 
+export class Notification {
+  constructor(public readonly reason: string | null = null) {}
+  static create(reason: string | null = null) {
+    return new Notification(reason);
+  }
+}
+
 /**
  * Represents a tree node structure compatible with PrimeNG TreeNode
  * @template T The type of data stored in the node
@@ -141,8 +148,8 @@ export function createHierarchicalTree<T extends Record<string, any>>(
         {
           data: item,
           children: [],
-          expanded,
-        },
+          expanded
+        }
       ];
     })
   );
