@@ -81,10 +81,10 @@ export class ReloadNotification {
   }
 }
 
-export class Notification {
+export class NotificationWithReason {
   constructor(public readonly reason: string | null = null) {}
   static create(reason: string | null = null) {
-    return new Notification(reason);
+    return new NotificationWithReason(reason);
   }
 }
 
