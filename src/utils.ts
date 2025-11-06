@@ -88,7 +88,7 @@ export class ReloadNotification {
   }
 }
 
-export class GenericNotification<T> {
+export class GenericNotification<T = any> {
   public readonly payload: T[];
 
   constructor(...payload: T[]) {
