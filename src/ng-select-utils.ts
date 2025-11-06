@@ -11,22 +11,47 @@ import { Observable } from "rxjs";
 import { NgSelectHelper } from "./ng-select-helper";
 
 /**
+ * @deprecated Use `initNgSelectHelper` instead.
+ */
+export function initNgSelect(
+  helpers$: Observable<NgSelectHelper<unknown>[]>,
+  destroyRef: DestroyRef,
+  onAjaxError: (err: Error) => void
+): void {
+  helpers$.pipe(takeUntilDestroyed(destroyRef)).subscribe({
+    next: (helpers) => {
+      helpers
+        .filter((elem) => elem instanceof NgSelectHelper && !elem.isInitDone)
+        .forEach((elem) => {
+          elem.init();
+          elem.ajaxError$.pipe(takeUntilDestroyed(destroyRef)).subscribe(onAjaxError);
+        });
+    }
+  });
+}
+
+type InitNgSelectHelperOptions = {
+  /** Optional Callback function to handle AJAX errors */
+  onAjaxError?: (err: Error) => void;
+  /** Optional Angular DestroyRef for automatic cleanup */
+  destroyRef?: DestroyRef;
+  /** Optional Angular Injector */
+  injector?: Injector;
+};
+
+/**
  * Utility function to initialize NgSelect helpers with error handling
  *
  * This function streamlines the initialization process for multiple NgSelect helpers
  * by automatically initializing them and setting up error handling subscriptions.
- *
- * @param helpers$ Observable of NgSelectHelper instances
- * @param destroyRef Angular DestroyRef for automatic cleanup
- * @param onAjaxError Callback function to handle AJAX errors
- *
+
  * @example
  * ```typescript
  * import { Component, inject, signal } from '@angular/core';
  * import { HttpClient } from '@angular/common/http';
  * import { DestroyRef } from '@angular/core';
  * import { toObservable } from '@angular/core/rxjs-interop';
- * import { NgSelectHelper, initNgSelect } from 'ngx-primeng-toolkit';
+ * import { NgSelectHelper, initNgSelectHelper } from 'ngx-primeng-toolkit';
  *
  * @Component({
  *   selector: 'app-example'
@@ -59,42 +84,14 @@ import { NgSelectHelper } from "./ng-select-helper";
  *     this.departmentSelectHelper
  *   ]);
  *
- *   constructor() {
- *     initNgSelect(
- *       toObservable(this.ngSelectHelpers),
- *       this.destroyRef,
- *       (err) => this.toastService.showAjaxErrorToast(err)
- *     );
- *   }
+ * constructor() {
+ *   initNgSelectHelper(this.ngSelectHelpers, {
+ *     onAjaxError: (err) => this.toastService.showAjaxErrorToast(err)
+ *   });
+ * }
  * }
  * ```
  */
-export function initNgSelect(
-  helpers$: Observable<NgSelectHelper<unknown>[]>,
-  destroyRef: DestroyRef,
-  onAjaxError: (err: Error) => void,
-  injector?: Injector
-): void {
-  helpers$.pipe(takeUntilDestroyed(destroyRef)).subscribe({
-    next: (helpers) => {
-      helpers
-        .filter((elem) => elem instanceof NgSelectHelper && !elem.isInitDone)
-        .forEach((elem) => {
-          elem.init();
-          elem.ajaxError$.pipe(takeUntilDestroyed(destroyRef)).subscribe(onAjaxError);
-        });
-    }
-  });
-}
-
-type InitNgSelectHelperOptions = {
-  /** Optional Callback function to handle AJAX errors */
-  onAjaxError?: (err: Error) => void;
-  /** Optional Angular DestroyRef for automatic cleanup */
-  destroyRef?: DestroyRef;
-  /** Optional Angular Injector */
-  injector?: Injector;
-};
 
 export function initNgSelectHelper<T = any>(
   items: Signal<NgSelectHelper<T>[]>,
