@@ -1,5 +1,12 @@
 import { KeyData } from "./types";
-
+import { HttpResourceRef } from "@angular/common/http";
+import {
+  assertInInjectionContext,
+  effect,
+  inject,
+  Injector,
+  runInInjectionContext
+} from "@angular/core";
 /**
  * Utility function to remove null and undefined values from an object
  *
@@ -81,11 +88,31 @@ export class ReloadNotification {
   }
 }
 
-export class NotificationWithReason {
-  constructor(public readonly reason: string | null = null) {}
-  static create(reason: string | null = null) {
-    return new NotificationWithReason(reason);
+export class GenericNotification<T> {
+  public readonly payload: T[];
+
+  constructor(...payload: T[]) {
+    this.payload = payload;
   }
+
+  static create<T>(...payload: T[]) {
+    return new GenericNotification<T>(...payload);
+  }
+}
+
+export function throwResourceError<T = any>(resorce: HttpResourceRef<T>, injector?: Injector) {
+  !injector && assertInInjectionContext(throwResourceError);
+  const assertedInjector = injector ?? inject(Injector);
+
+  runInInjectionContext(assertedInjector, () => {
+    effect(() => {
+      const status = resorce.status();
+
+      if (status === "error") {
+        throw resorce.error();
+      }
+    });
+  });
 }
 
 /**
