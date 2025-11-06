@@ -93,9 +93,9 @@ type InitNgSelectHelperOptions = {
  * ```
  */
 
-export function initNgSelectHelper<T = any>(
-  items: Signal<NgSelectHelper<T>[]>,
-  options: InitNgSelectHelperOptions
+export function initNgSelectHelper(
+  items: Signal<NgSelectHelper<never>[]>,
+  options: InitNgSelectHelperOptions = {}
 ): void {
   !options.injector && assertInInjectionContext(initNgSelectHelper);
   const assertedInjector = options.injector ?? inject(Injector);
