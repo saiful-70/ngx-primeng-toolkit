@@ -134,17 +134,17 @@ interface RecursivePartialArray<Thing> extends Array<RecursivePartial<Thing>> {}
  */
 export enum ManipulationType {
   /** Creating a new item */
-  Create = "Create",
+  Create = "create",
   /** Updating an existing item */
-  Update = "Update",
+  Update = "update",
   /** Creating a child item */
-  CreateChild = "Create Child",
+  CreateChild = "create-child",
   /** Deleting an item */
-  Delete = "Delete",
+  Delete = "delete",
   /** Viewing item details */
-  View = "View",
+  View = "view",
   /** Saving an item */
-  Save = "Save",
+  Save = "save",
 }
 
 /**
