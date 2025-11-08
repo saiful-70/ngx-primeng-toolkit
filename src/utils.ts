@@ -1,12 +1,4 @@
 import { KeyData } from "./types";
-import { HttpResourceRef } from "@angular/common/http";
-import {
-  assertInInjectionContext,
-  effect,
-  inject,
-  Injector,
-  runInInjectionContext
-} from "@angular/core";
 /**
  * Utility function to remove null and undefined values from an object
  *
@@ -32,8 +24,12 @@ import {
  * this.tableState.setQueryParams(cleanNullishFromObject(queryParams));
  * ```
  */
-export function cleanNullishFromObject(o: object): Record<string, any> {
-  return Object.fromEntries(Object.entries(o).filter(([, v]) => v != null));
+export function cleanNullishFromObject(obj?: object): Record<string, any> {
+  if (obj === undefined) {
+    return {};
+  }
+
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v != null));
 }
 
 export function hasNullishInObject(obj: object): boolean {
@@ -86,27 +82,6 @@ export class ReloadNotification {
   static create() {
     return new ReloadNotification();
   }
-}
-
-export class SignalChangeNotification {
-  static create() {
-    return new SignalChangeNotification();
-  }
-}
-
-export function throwResourceError<T = any>(resorce: HttpResourceRef<T>, injector?: Injector) {
-  !injector && assertInInjectionContext(throwResourceError);
-  const assertedInjector = injector ?? inject(Injector);
-
-  runInInjectionContext(assertedInjector, () => {
-    effect(() => {
-      const status = resorce.status();
-
-      if (status === "error") {
-        throw resorce.error();
-      }
-    });
-  });
 }
 
 /**

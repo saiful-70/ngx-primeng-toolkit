@@ -102,5 +102,8 @@
     "@ng-select/ng-select": {
       "optional": false
     }
+  },
+  "dependencies": {
+    "lz-string": "^1.5.0"
   }
 }
