@@ -83,7 +83,6 @@ export function nullableKeyData<TKey, TData>(
 }
 
 export class ReloadNotification {
-  constructor() {}
   static create() {
     return new ReloadNotification();
   }
