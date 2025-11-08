@@ -107,20 +107,18 @@ export function initNgSelectHelper(
   runInInjectionContext(assertedInjector, () => {
     toObservable(items)
       .pipe(takeUntilDestroyed(options.destroyRef))
-      .subscribe({
-        next: (elem) => {
-          elem
-            .filter((elem) => elem instanceof NgSelectHelper && !elem.isInitDone)
-            .forEach((elem) => {
-              elem.init();
+      .subscribe((elem) => {
+        elem
+          .filter((elem) => elem instanceof NgSelectHelper && !elem.isInitDone)
+          .forEach((elem) => {
+            elem.init();
 
-              if (options.onAjaxError) {
-                elem.ajaxError$
-                  .pipe(takeUntilDestroyed(options.destroyRef))
-                  .subscribe(options.onAjaxError);
-              }
-            });
-        }
+            if (options.onAjaxError) {
+              elem.ajaxError$
+                .pipe(takeUntilDestroyed(options.destroyRef))
+                .subscribe(options.onAjaxError);
+            }
+          });
       });
   });
 }

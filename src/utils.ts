@@ -89,15 +89,9 @@ export class ReloadNotification {
   }
 }
 
-export class GenericNotification<T = any> {
-  public readonly payload: T[];
-
-  constructor(...payload: T[]) {
-    this.payload = payload;
-  }
-
-  static create<T>(...payload: T[]) {
-    return new GenericNotification<T>(...payload);
+export class SignalChangeNotification {
+  static create() {
+    return new SignalChangeNotification();
   }
 }
 

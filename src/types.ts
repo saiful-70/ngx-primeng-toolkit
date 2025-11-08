@@ -31,8 +31,7 @@ type RecursiveNullableObject<Thing extends object> = {
   [Key in keyof Thing]: RecursiveNullable<Thing[Key]>;
 };
 
-interface RecursiveNullableArray<Thing>
-  extends Array<RecursiveNullable<Thing>> {}
+interface RecursiveNullableArray<Thing> extends Array<RecursiveNullable<Thing>> {}
 
 /**
  * Makes all properties of T nullish (T | null | undefined)
@@ -144,7 +143,7 @@ export enum ManipulationType {
   /** Viewing item details */
   View = "view",
   /** Saving an item */
-  Save = "save",
+  Save = "save"
 }
 
 /**
@@ -242,10 +241,7 @@ export type NumericFilterType =
 /**
  * Boolean filter types for PrimeNG table filtering
  */
-export type BooleanFilterType = Extract<
-  NumericFilterType,
-  "equals" | "notEquals"
->;
+export type BooleanFilterType = Extract<NumericFilterType, "equals" | "notEquals">;
 
 /**
  * Combined filter types
@@ -374,10 +370,7 @@ export interface PagedDataQueryDto {
 /**
  * Query parameters type for additional HTTP request parameters
  */
-export type PrimeNgTableStateHelperQueryParam = Record<
-  string,
-  string | number | boolean
->;
+export type PrimeNgTableStateHelperQueryParam = Record<string, string | number | boolean>;
 
 // ===============================================================================
 // Zod Schemas
@@ -389,7 +382,7 @@ export type PrimeNgTableStateHelperQueryParam = Record<
 export const dynamicQueryResponseZodSchema = z.object({
   data: z.any().array(),
   last_page: z.number(),
-  last_row: z.number(),
+  last_row: z.number()
 });
 
 /**
@@ -397,7 +390,7 @@ export const dynamicQueryResponseZodSchema = z.object({
  */
 export const PagedDataResponseZodSchema = z.object({
   payload: z.any().array(),
-  totalCount: z.number(),
+  totalCount: z.number()
 });
 
 /**
@@ -405,7 +398,7 @@ export const PagedDataResponseZodSchema = z.object({
  */
 export const NumberStringKeyDataSchema = z.object({
   key: z.union([z.number(), z.string()]),
-  data: z.string(),
+  data: z.string()
 });
 
 export type NumberStringKeyData = z.infer<typeof NumberStringKeyDataSchema>;
@@ -416,11 +409,9 @@ export type NumberStringKeyData = z.infer<typeof NumberStringKeyDataSchema>;
  * @param payloadSchema The Zod schema for the payload data
  * @returns Zod schema for nullable API response
  */
-export const NullableApiResponseSchema = <T extends z.ZodTypeAny>(
-  payloadSchema: T
-) =>
+export const NullableApiResponseSchema = <T extends z.ZodTypeAny>(payloadSchema: T) =>
   z.object({
-    payload: payloadSchema.nullable(),
+    payload: payloadSchema.nullable()
   });
 
 /**
@@ -475,9 +466,7 @@ export function isApiResponse<T>(response: any): response is ApiResponse<T> {
  * @param response The response to check
  * @returns true if response is PaginatedResponse, false otherwise
  */
-export function isPaginatedResponse<T>(
-  response: any
-): response is PaginatedResponse<T> {
+export function isPaginatedResponse<T>(response: any): response is PaginatedResponse<T> {
   return (
     typeof response === "object" &&
     response !== null &&
@@ -493,9 +482,7 @@ export function isPaginatedResponse<T>(
  * @param response The response to check
  * @returns true if response is PagedDataResponse, false otherwise
  */
-export function isSimplePagedResponse<T>(
-  response: any
-): response is PagedDataResponse<T> {
+export function isSimplePagedResponse<T>(response: any): response is PagedDataResponse<T> {
   return (
     typeof response === "object" &&
     response !== null &&

@@ -42,6 +42,31 @@ export class ComponentState {
   readonly isUpdatePageOpen = signal<boolean>(false);
   readonly isCreatePageOpen = signal<boolean>(false);
 
+  readonly manipulationTypeLabel = computed(() => {
+    switch (this.manipulationType()) {
+      case ManipulationType.Create:
+        return "Create";
+
+      case ManipulationType.Update:
+        return "Update";
+
+      case ManipulationType.CreateChild:
+        return "Create Child";
+
+      case ManipulationType.Delete:
+        return "Delete";
+
+      case ManipulationType.View:
+        return "View";
+
+      case ManipulationType.Save:
+        return "Save";
+
+      default:
+        return "";
+    }
+  });
+
   /**
    * Updates the component title
    * @param componentTitle - The new title for the component
@@ -189,9 +214,7 @@ export class ComponentState {
    */
   readonly isAnyDialogOpen = computed(() => {
     return (
-      this.isCreateOrUpdateDialogOpen() ||
-      this.isUpdateDialogOpen() ||
-      this.isCreateDialogOpen()
+      this.isCreateOrUpdateDialogOpen() || this.isUpdateDialogOpen() || this.isCreateDialogOpen()
     );
   });
 
