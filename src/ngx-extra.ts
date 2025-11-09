@@ -1,12 +1,15 @@
 import { HttpResourceRef } from "@angular/common/http";
 import {
   assertInInjectionContext,
+  DestroyRef,
   effect,
   inject,
   Injector,
   runInInjectionContext,
   signal
 } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { Observable } from "rxjs";
 
 export class SignalChangeNotification {
   static create() {
@@ -38,4 +41,30 @@ export function createNumericSignalChangeNotifier() {
     },
     listen: sourceSignal.asReadonly()
   };
+}
+
+export function afterDestroy(fn: () => void, injector?: Injector) {
+  !injector && assertInInjectionContext(afterDestroy);
+  const assertedInjector = injector ?? inject(Injector);
+
+  runInInjectionContext(assertedInjector, () => {
+    inject(DestroyRef).onDestroy(fn);
+  });
+}
+
+type RxSubscriberOptions<T> = {
+  source: Observable<T>;
+  handleStream: (payload: T) => void;
+  injector?: Injector;
+};
+
+export function rxSubscriber<T>(options: RxSubscriberOptions<T>) {
+  !options.injector && assertInInjectionContext(afterDestroy);
+  const assertedInjector = options.injector ?? inject(Injector);
+
+  runInInjectionContext(assertedInjector, () => {
+    options.source.pipe(takeUntilDestroyed()).subscribe((payloadFromStream) => {
+      options.handleStream(payloadFromStream);
+    });
+  });
 }

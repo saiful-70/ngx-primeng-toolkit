@@ -1,5 +1,12 @@
 import { HttpClient, HttpContext } from "@angular/common/http";
-import { DestroyRef, signal } from "@angular/core";
+import {
+  assertInInjectionContext,
+  DestroyRef,
+  inject,
+  Injector,
+  runInInjectionContext,
+  signal
+} from "@angular/core";
 import {
   catchError,
   debounceTime,
@@ -22,7 +29,7 @@ type NgSelectHelperOpts = {
   ajaxUrl: string;
   httpClient: HttpClient;
   destroyRef: DestroyRef;
-  usePostRequest: boolean;
+  usePostRequest?: boolean;
   initialSearchText?: string;
   limit?: number;
   useCache?: boolean;
@@ -201,7 +208,7 @@ export class NgSelectHelper<TData> {
     ajaxUrl,
     httpClient,
     destroyRef,
-    usePostRequest,
+    usePostRequest = false,
     limit = 50,
     useCache = true,
     skipLoadingSpinner = true,
@@ -647,4 +654,21 @@ export class NgSelectHelper<TData> {
   private resetSearchText(): void {
     this.#searchText = "";
   }
+}
+
+export function createNgSelectHelper<T>(
+  options: Omit<NgSelectHelperOpts, "httpClient" | "destroyRef"> & { injector?: Injector }
+) {
+  !options.injector && assertInInjectionContext(createNgSelectHelper);
+  const assertedInjector = options.injector ?? inject(Injector);
+
+  return runInInjectionContext(assertedInjector, () => {
+    const httpClient = inject(HttpClient);
+    const destroyRef = inject(DestroyRef);
+    return NgSelectHelper.create<T>({
+      ...options,
+      httpClient,
+      destroyRef
+    });
+  });
 }
