@@ -33,8 +33,6 @@ export function initNgSelect(
 type InitNgSelectHelperOptions = {
   /** Optional Callback function to handle AJAX errors */
   onAjaxError?: (err: Error) => void;
-  /** Optional Angular DestroyRef for automatic cleanup */
-  destroyRef?: DestroyRef;
   /** Optional Angular Injector */
   injector?: Injector;
 };
@@ -100,13 +98,9 @@ export function initNgSelectHelper(
   !options.injector && assertInInjectionContext(initNgSelectHelper);
   const assertedInjector = options.injector ?? inject(Injector);
 
-  if (!options.destroyRef) {
-    options.destroyRef = inject(DestroyRef);
-  }
-
   runInInjectionContext(assertedInjector, () => {
     toObservable(items)
-      .pipe(takeUntilDestroyed(options.destroyRef))
+      .pipe(takeUntilDestroyed())
       .subscribe((elem) => {
         elem
           .filter((elem) => elem instanceof NgSelectHelper && !elem.isInitDone)
@@ -115,7 +109,7 @@ export function initNgSelectHelper(
 
             if (options.onAjaxError) {
               elem.ajaxError$
-                .pipe(takeUntilDestroyed(options.destroyRef))
+                .pipe(takeUntilDestroyed())
                 .subscribe(options.onAjaxError);
             }
           });
