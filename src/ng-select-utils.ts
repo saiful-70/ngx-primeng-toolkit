@@ -108,9 +108,15 @@ export function initNgSelectHelper(
           .forEach((elem) => {
             elem.init();
 
-            if (options.onAjaxError) {
-              elem.ajaxError$.pipe(takeUntilDestroyed()).subscribe(options.onAjaxError);
+            if (!options.onAjaxError) {
+              return;
             }
+
+            elem.ajaxError$.pipe(takeUntilDestroyed(destroyRef)).subscribe((payload) => {
+              if (options.onAjaxError) {
+                options.onAjaxError(payload);
+              }
+            });
           });
       });
   });
