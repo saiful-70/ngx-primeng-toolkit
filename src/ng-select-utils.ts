@@ -99,8 +99,9 @@ export function initNgSelectHelper(
   const assertedInjector = options.injector ?? inject(Injector);
 
   runInInjectionContext(assertedInjector, () => {
+    const destroyRef = inject(DestroyRef);
     toObservable(items)
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((elem) => {
         elem
           .filter((elem) => elem instanceof NgSelectHelper && !elem.isInitDone)
@@ -108,9 +109,7 @@ export function initNgSelectHelper(
             elem.init();
 
             if (options.onAjaxError) {
-              elem.ajaxError$
-                .pipe(takeUntilDestroyed())
-                .subscribe(options.onAjaxError);
+              elem.ajaxError$.pipe(takeUntilDestroyed()).subscribe(options.onAjaxError);
             }
           });
       });
