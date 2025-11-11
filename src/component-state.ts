@@ -1,5 +1,5 @@
 import { computed, signal } from "@angular/core";
-import { ManipulationType } from "./types";
+import { ManipulationMode, ManipulationType } from "./types";
 
 /**
  * A reactive state management class for Angular components using signals
@@ -233,6 +233,62 @@ export class ComponentState {
     this.isCreateDialogOpen.set(false);
     this.manipulationType.set(ManipulationType.Create);
     this.componentTitle.set("");
+    return this;
+  };
+}
+
+export class SlimComponentState {
+  readonly canSelectCheckBox = signal<boolean>(false);
+  readonly canSelectRow = signal<boolean>(false);
+  readonly canSelectMultipleItem = signal<boolean>(false);
+
+  readonly manipulationMode = signal<ManipulationMode | null>(null);
+  readonly title = signal<string>("");
+
+  readonly isAnyNetworkOperationRunning = signal<boolean>(false);
+  readonly isDataManipulationUiActive = signal<boolean>(false);
+  readonly isUpdateUiActive = signal<boolean>(false);
+  readonly isCreateUiActive = signal<boolean>(false);
+
+  readonly isCreateOrUpdateUiActive = computed(() => {
+    return this.isCreateUiActive() || this.isUpdateUiActive();
+  });
+
+  readonly titleWithManipulationMode = computed(() => {
+    return `${this.manipulationModeLabel()}  ${this.title()}`;
+  });
+
+  readonly manipulationModeLabel = computed(() => {
+    switch (this.manipulationMode()) {
+      case "create":
+        return "Create";
+
+      case "update":
+        return "Update";
+
+      case "create-child":
+        return "Create Child";
+
+      case "delete":
+        return "Delete";
+
+      case "view":
+        return "View";
+
+      case "save":
+        return "Save";
+
+      default:
+        return "";
+    }
+  });
+
+  reset = () => {
+    this.canSelectCheckBox.set(false);
+    this.canSelectRow.set(false);
+    this.canSelectMultipleItem.set(false);
+    this.manipulationMode.set(null);
+    this.title.set("");
     return this;
   };
 }
