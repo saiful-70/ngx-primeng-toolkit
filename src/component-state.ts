@@ -238,7 +238,7 @@ export class ComponentState {
 }
 
 export class SlimComponentState {
-  readonly canSelectCheckBox = signal<boolean>(false);
+  readonly isCheckBoxSelectEnabled = signal<boolean>(false);
   readonly canSelectRow = signal<boolean>(false);
   readonly canSelectMultipleItem = signal<boolean>(false);
 
@@ -283,12 +283,110 @@ export class SlimComponentState {
     }
   });
 
+  /**
+   * Sets the title
+   * @param title - The new title
+   * @returns This instance for method chaining
+   */
+  setTitle = (title: string) => {
+    this.title.set(title);
+    return this;
+  };
+
+  /**
+   * Sets the manipulation mode
+   * @param mode - The manipulation mode
+   * @returns This instance for method chaining
+   */
+  setManipulationMode = (mode: ManipulationMode | null) => {
+    this.manipulationMode.set(mode);
+    return this;
+  };
+
+  /**
+   * Sets the checkbox selection status
+   * @param canSelect - Whether checkbox selection is enabled
+   * @returns This instance for method chaining
+   */
+  setIsCheckBoxSelectEnabled = (canSelect: boolean) => {
+    this.isCheckBoxSelectEnabled.set(canSelect);
+    return this;
+  };
+
+  /**
+   * Sets the row selection status
+   * @param canSelect - Whether row selection is enabled
+   * @returns This instance for method chaining
+   */
+  setCanSelectRow = (canSelect: boolean) => {
+    this.canSelectRow.set(canSelect);
+    return this;
+  };
+
+  /**
+   * Sets the multiple item selection status
+   * @param canSelect - Whether multiple item selection is enabled
+   * @returns This instance for method chaining
+   */
+  setCanSelectMultipleItem = (canSelect: boolean) => {
+    this.canSelectMultipleItem.set(canSelect);
+    return this;
+  };
+
+  /**
+   * Sets the network operation running status
+   * @param status - Whether any network operation is running
+   * @returns This instance for method chaining
+   */
+  setIsAnyNetworkOperationRunning = (status: boolean) => {
+    this.isAnyNetworkOperationRunning.set(status);
+    return this;
+  };
+
+  /**
+   * Sets the data manipulation UI active status
+   * @param status - Whether data manipulation UI is active
+   * @returns This instance for method chaining
+   */
+  setIsDataManipulationUiActive = (status: boolean) => {
+    this.isDataManipulationUiActive.set(status);
+    return this;
+  };
+
+  /**
+   * Sets the update UI active status
+   * @param status - Whether update UI is active
+   * @returns This instance for method chaining
+   */
+  setIsUpdateUiActive = (status: boolean) => {
+    this.isUpdateUiActive.set(status);
+    return this;
+  };
+
+  /**
+   * Sets the create UI active status
+   * @param status - Whether create UI is active
+   * @returns This instance for method chaining
+   */
+  setIsCreateUiActive = (status: boolean) => {
+    this.isCreateUiActive.set(status);
+    return this;
+  };
+
+  /**
+   * Resets all state to default values
+   * @returns This instance for method chaining
+   */
   reset = () => {
-    this.canSelectCheckBox.set(false);
+    this.isCheckBoxSelectEnabled.set(false);
     this.canSelectRow.set(false);
     this.canSelectMultipleItem.set(false);
     this.manipulationMode.set(null);
     this.title.set("");
+    this.isAnyNetworkOperationRunning.set(false);
+    this.isDataManipulationUiActive.set(false);
+    this.isUpdateUiActive.set(false);
+    this.isCreateUiActive.set(false);
     return this;
   };
 }
