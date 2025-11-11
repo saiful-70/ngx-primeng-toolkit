@@ -1,11 +1,11 @@
-import { signal } from "@angular/core";
+import { computed, signal } from "@angular/core";
 
 /**
  * A generic component data storage class using Angular signals
  * Provides reactive data management for both single objects and arrays
- * 
+ *
  * @template T The type of data to be stored and managed
- * 
+ *
  * @example
  * ```typescript
  * interface User {
@@ -13,7 +13,7 @@ import { signal } from "@angular/core";
  *   name: string;
  *   email: string;
  * }
- * 
+ *
  * @Component({
  *   selector: 'app-user-list',
  *   template: `
@@ -24,7 +24,7 @@ import { signal } from "@angular/core";
  *         <p>{{ user.email }}</p>
  *       </div>
  *     }
- *     
+ *
  *     <!-- Multiple users display -->
  *     @for (user of dataStorage.multipleData(); track user.id) {
  *       <div>{{ user.name }} - {{ user.email }}</div>
@@ -33,7 +33,7 @@ import { signal } from "@angular/core";
  * })
  * export class UserListComponent {
  *   dataStorage = new ComponentDataStorage<User>();
- *   
+ *
  *   ngOnInit() {
  *     // Set initial data
  *     this.dataStorage
@@ -54,7 +54,7 @@ export class ComponentDataStorage<T> {
    * Patches multiple data by appending new data to the existing array
    * @param newData - Array of new data to append
    * @returns This instance for method chaining
-   * 
+   *
    * @example
    * ```typescript
    * const storage = new ComponentDataStorage<User>();
@@ -66,7 +66,7 @@ export class ComponentDataStorage<T> {
   public patchMultipleData(newData: Array<T>) {
     this.multipleData.update((prevData) => {
       return [...prevData, ...newData];
-    }); 
+    });
 
     return this;
   }
@@ -76,7 +76,7 @@ export class ComponentDataStorage<T> {
    * If no existing data, creates new object with provided data
    * @param newData - Partial data to merge with existing single data
    * @returns This instance for method chaining
-   * 
+   *
    * @example
    * ```typescript
    * const storage = new ComponentDataStorage<User>();
@@ -86,7 +86,7 @@ export class ComponentDataStorage<T> {
    * ```
    */
   public patchSingleData(newData: Partial<T>) {
-    this.singleData.update((prev) => prev ? { ...prev, ...newData } : { ...newData } as T);
+    this.singleData.update((prev) => (prev ? { ...prev, ...newData } : ({ ...newData } as T)));
     return this;
   }
 
@@ -116,7 +116,7 @@ export class ComponentDataStorage<T> {
    * @returns This instance for method chaining
    */
   public addToMultipleData(item: T) {
-    this.multipleData.update(prevData => [...prevData, item]);
+    this.multipleData.update((prevData) => [...prevData, item]);
     return this;
   }
 
@@ -124,14 +124,14 @@ export class ComponentDataStorage<T> {
    * Removes an item from the multiple data array based on a predicate function
    * @param predicate - Function that returns true for items to remove
    * @returns This instance for method chaining
-   * 
+   *
    * @example
    * ```typescript
    * storage.removeFromMultipleData(user => user.id === 1);
    * ```
    */
   public removeFromMultipleData(predicate: (item: T) => boolean) {
-    this.multipleData.update(prevData => prevData.filter(item => !predicate(item)));
+    this.multipleData.update((prevData) => prevData.filter((item) => !predicate(item)));
     return this;
   }
 
@@ -140,7 +140,7 @@ export class ComponentDataStorage<T> {
    * @param predicate - Function that returns true for items to update
    * @param updateFn - Function that returns the updated item
    * @returns This instance for method chaining
-   * 
+   *
    * @example
    * ```typescript
    * storage.updateItemInMultipleData(
@@ -150,8 +150,8 @@ export class ComponentDataStorage<T> {
    * ```
    */
   public updateItemInMultipleData(predicate: (item: T) => boolean, updateFn: (item: T) => T) {
-    this.multipleData.update(prevData => 
-      prevData.map(item => predicate(item) ? updateFn(item) : item)
+    this.multipleData.update((prevData) =>
+      prevData.map((item) => (predicate(item) ? updateFn(item) : item))
     );
     return this;
   }
@@ -188,25 +188,27 @@ export class ComponentDataStorage<T> {
    * Checks if single data exists (is not null)
    * @returns true if single data exists, false otherwise
    */
-  public hasSingleData(): boolean {
+  public hasSingleData = computed(() => {
     return this.singleData() !== null;
-  }
+  });
 
   /**
    * Checks if multiple data has items
    * @returns true if multiple data array has items, false if empty
    */
-  public hasMultipleData(): boolean {
-    return this.multipleData().length > 0;
-  }
+
+  public hasMultipleData = computed(() => {
+    return !Array.isArray(this.multipleData()) ? false : this.multipleData().length > 0;
+  });
 
   /**
    * Gets the count of items in multiple data
    * @returns Number of items in the multiple data array
    */
-  public getMultipleDataCount(): number {
-    return this.multipleData().length;
-  }
+
+  public getMultipleDataCount = computed(() => {
+    return !this.hasMultipleData() ? 0 : this.multipleData().length;
+  });
 
   /**
    * Finds an item in the multiple data array
