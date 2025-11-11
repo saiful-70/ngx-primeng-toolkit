@@ -171,7 +171,7 @@ export class ComponentState {
    * Computed signal that combines component title with manipulation type
    */
   readonly componentTitleWithManipulationType = computed(() => {
-    return this.manipulationType() + " " + this.componentTitle();
+    return this.manipulationTypeLabel() + " " + this.componentTitle();
   });
 
   /**
