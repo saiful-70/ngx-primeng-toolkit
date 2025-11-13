@@ -43,8 +43,8 @@ export function createNumericSignalChangeNotifier() {
   };
 }
 
-export function afterDestroy(fn: () => void, injector?: Injector) {
-  !injector && assertInInjectionContext(afterDestroy);
+export function duringDestroy(fn: () => void, injector?: Injector) {
+  !injector && assertInInjectionContext(duringDestroy);
   const assertedInjector = injector ?? inject(Injector);
 
   runInInjectionContext(assertedInjector, () => {
@@ -59,7 +59,7 @@ type RxSubscriberOptions<T> = {
 };
 
 export function rxSubscriber<T>(options: RxSubscriberOptions<T>) {
-  !options.injector && assertInInjectionContext(afterDestroy);
+  !options.injector && assertInInjectionContext(duringDestroy);
   const assertedInjector = options.injector ?? inject(Injector);
 
   runInInjectionContext(assertedInjector, () => {

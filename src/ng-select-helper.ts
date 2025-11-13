@@ -17,9 +17,9 @@ import {
   of,
   Subject,
   Subscription,
-  switchMap
+  switchMap,
+  tap
 } from "rxjs";
-import { z } from "zod";
 import { SkipLoadingSpinner } from "./http-context-tokens";
 
 /**
@@ -82,14 +82,6 @@ type CacheKey = {
 export class NgSelectPagedDataResponse<TData> {
   constructor(public readonly payload: Array<TData>, public readonly totalCount: number) {}
 }
-
-/**
- * Zod schema for validating ng-select paged response
- */
-export const NgSelectPagedDataResponseZodSchema = z.object({
-  payload: z.any().array(),
-  totalCount: z.number()
-});
 
 /**
  * Default reset options
@@ -547,14 +539,23 @@ export class NgSelectHelper<TData> {
     return req.pipe(
       first(),
       mergeMap((val) => {
-        const result = NgSelectPagedDataResponseZodSchema.safeParse(val);
-        if (!result.success) {
+        if (!val) {
           throw new Error("Invalid response body for ng-select");
         }
+        if (!Object.hasOwn(val, "payload") || !Object.hasOwn(val, "totalCount")) {
+          throw new Error("Invalid response body for ng-select");
+        }
+
+        if (!Array.isArray(Reflect.get(val, "payload"))) {
+          throw new Error("Invalid response body for ng-select");
+        }
+
+        return of(val);
+      }),
+      tap((val) => {
         if (this.useCache && strKey && val) {
           this.#cache.set(strKey, val);
         }
-        return of(val);
       }),
       catchError((error) => {
         this.#ajaxErrorSubject.next(error);
