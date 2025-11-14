@@ -362,7 +362,9 @@ export class NgSelectHelper<TData> {
     if (this.#isLoading()) {
       return;
     }
-    this.runProbablePageCounterUpdate();
+    if (this.isLastApiCallSuccessful && !this.limitReached) {
+      this.#page += 1;
+    }
     this.#loadMoreDataSubject.next();
   }
 
@@ -566,19 +568,13 @@ export class NgSelectHelper<TData> {
   }
 
   /**
-   * Updates page counter if conditions are met
-   */
-  private runProbablePageCounterUpdate(): void {
-    if (this.isLastApiCallSuccessful && !this.limitReached) {
-      this.#page += 1;
-    }
-  }
+
 
   /**
    * Checks if the limit has been reached
    */
   private runLimitReachedCheck(): void {
-    if (this.totalCount != -1) {
+    if (this.totalCount !== -1) {
       this.#limitReached = this.#loadedData().payload.length >= this.totalCount;
     }
   }

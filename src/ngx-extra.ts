@@ -5,11 +5,13 @@ import {
   effect,
   inject,
   Injector,
+  isSignal,
   runInInjectionContext,
+  Signal,
   signal
 } from "@angular/core";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { Observable } from "rxjs";
+import { takeUntilDestroyed, toObservable, toSignal } from "@angular/core/rxjs-interop";
+import { debounceTime, Observable } from "rxjs";
 
 export class SignalChangeNotification {
   static create() {
@@ -29,6 +31,24 @@ export function throwResourceError<T = any>(resorce: HttpResourceRef<T>, injecto
         throw resorce.error();
       }
     });
+  });
+}
+export function debounceSignal<T>(
+  source: Signal<T> | Observable<T>,
+  ms: number,
+  injector?: Injector
+) {
+  !injector && assertInInjectionContext(debounceSignal);
+  const assertedInjector = injector ?? inject(Injector);
+
+  return runInInjectionContext(assertedInjector, () => {
+    if (isSignal(source)) {
+      return toSignal(toObservable(source).pipe(debounceTime(ms), takeUntilDestroyed()));
+    } else if (source instanceof Observable) {
+      toSignal(source.pipe(debounceTime(ms), takeUntilDestroyed()));
+    } else {
+      throw new Error("Invalid source");
+    }
   });
 }
 
