@@ -34,6 +34,14 @@ type DataContainer<T> = {
   totalCount: number;
 };
 
+type ChainableVoid = {
+  setBody(value: any): ChainableVoid;
+  clearBody(): ChainableVoid;
+  patchQueryParam(value: Record<string, string | number | boolean>): ChainableVoid;
+  removeQueryParam(key: string): ChainableVoid;
+  removeAllQueryParams(): ChainableVoid;
+};
+
 type OffsetPaginatedNgSelectStateOptions = {
   searchOnlyMode?: boolean;
   searchQueryParamKey?: string;
@@ -421,14 +429,14 @@ export function createOffsetPaginatedNgSelectState<TData>(
     };
 
     const chainableMethods = {
-      setBody(value: any) {
+      setBody(value: any): ChainableVoid {
         if (optionsWithDefaultValue.requestMethod === "POST") {
           resetInternalState();
           internalState.postRequestBody.set(value);
         }
         return this;
       },
-      clearBody() {
+      clearBody(): ChainableVoid {
         if (optionsWithDefaultValue.requestMethod === "POST") {
           resetInternalState();
           internalState.postRequestBody.set(null);
@@ -436,7 +444,7 @@ export function createOffsetPaginatedNgSelectState<TData>(
         return this;
       },
 
-      patchQueryParam(value: Record<string, string | number | boolean>) {
+      patchQueryParam(value: Record<string, string | number | boolean>): ChainableVoid {
         Object.keys(value).forEach((key) => {
           if (blackListedQueryKeys.includes(key.toLowerCase())) {
             delete value[key];
@@ -457,7 +465,7 @@ export function createOffsetPaginatedNgSelectState<TData>(
         return this;
       },
 
-      removeQueryParam(key: string) {
+      removeQueryParam(key: string): ChainableVoid {
         resetInternalState();
         internalState.queryParamsFromUser.update((currentValue) => {
           delete currentValue[key];
@@ -466,7 +474,7 @@ export function createOffsetPaginatedNgSelectState<TData>(
 
         return this;
       },
-      removeAllQueryParams() {
+      removeAllQueryParams(): ChainableVoid {
         resetInternalState();
         internalState.queryParamsFromUser.set({});
         return this;
