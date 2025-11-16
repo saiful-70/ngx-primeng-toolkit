@@ -1,66 +1,96 @@
-import {
-  HttpClient,
-  HttpContext,
-  HttpContextToken,
-  HttpParams,
-  HttpRequest,
-  httpResource
-} from "@angular/common/http";
+import { HttpClient, HttpContext, HttpContextToken } from "@angular/common/http";
 import {
   assertInInjectionContext,
+  computed,
   DestroyRef,
-  effect,
   inject,
   Injector,
+  isSignal,
   runInInjectionContext,
-  signal,
-  untracked
+  Signal,
+  signal
 } from "@angular/core";
 import { takeUntilDestroyed, toObservable } from "@angular/core/rxjs-interop";
 import {
   catchError,
+  combineLatestWith,
   debounceTime,
+  defer,
   filter,
-  first,
+  finalize,
   interval,
+  Observable,
   of,
-  startWith,
   Subject,
   switchMap,
   tap
 } from "rxjs";
-import { SignalChangeNotification } from "./ngx-extra";
 
 export const OffsetPaginatedNgSelectNetworkRequest = new HttpContextToken(() => false);
 
-export class OffsetPaginatedDataResponse<TData> {
-  constructor(public readonly payload: Array<TData>, public readonly totalCount: number) {}
-}
+type DataContainer<T> = {
+  payload: T[];
+  totalCount: number;
+};
 
 type OffsetPaginatedNgSelectStateOptions = {
-  url: string;
+  searchOnlyMode?: boolean;
   searchQueryParamKey?: string;
   pageQueryParamKey?: string;
   limitQueryParamKey?: string;
+  dataArrayKey?: string;
+  totalDataCountKey?: string;
   requestMethod?: "GET" | "POST";
   queryParams?: Record<string, string | number | boolean>;
-  initialSearchText?: string;
-  limit?: number;
+  postRequestBody?: any;
+  dataLimitPerRequest?: number;
   debounceTimeMs?: number;
-  cacheTtlMs?: number;
   useCache?: boolean;
+  cacheTtlSec?: number;
+  disableCacheExpiration?: boolean;
   injector?: Injector;
   httpContext?: HttpContext;
-  throwUnhandledError?: boolean;
-  handleError?: (error?: Error) => void;
+  onError?: (error: Error) => void;
 };
 
-type DefaultOptions = Required<
-  Omit<OffsetPaginatedNgSelectStateOptions, "initialSearchText" | "handleError">
-> &
-  Pick<OffsetPaginatedNgSelectStateOptions, "initialSearchText" | "handleError">;
+type CacheKey = {
+  url: string;
+  queryParams: Record<string, string | number | boolean>;
+  body: any;
+};
+
+type DefaultOptions = Required<Omit<OffsetPaginatedNgSelectStateOptions, "onError">> &
+  Pick<OffsetPaginatedNgSelectStateOptions, "onError">;
+
+function isValidData(dataArrayKey: string, dataCountKey: string, rawData: any): boolean {
+  if (typeof rawData !== "object" || rawData === null || Array.isArray(rawData)) {
+    return false;
+  }
+
+  if (!(dataArrayKey in rawData) || !(dataCountKey in rawData)) {
+    return false;
+  }
+
+  if (!Array.isArray(rawData[dataArrayKey])) {
+    return false;
+  }
+
+  if (typeof rawData[dataCountKey] !== "number") {
+    return false;
+  }
+
+  return true;
+}
+
+function defaultData<T>() {
+  return {
+    payload: [] as T[],
+    totalCount: 0
+  } satisfies DataContainer<T>;
+}
 
 export function createOffsetPaginatedNgSelectState<TData>(
+  url: string | Signal<string>,
   options: OffsetPaginatedNgSelectStateOptions
 ) {
   !options.injector && assertInInjectionContext(createOffsetPaginatedNgSelectState);
@@ -68,204 +98,381 @@ export function createOffsetPaginatedNgSelectState<TData>(
 
   const optionsWithDefaultValue: DefaultOptions = {
     searchQueryParamKey: options.searchQueryParamKey ?? "searchText",
-    url: options.url,
     pageQueryParamKey: options.pageQueryParamKey ?? "page",
     limitQueryParamKey: options.limitQueryParamKey ?? "limit",
+    dataArrayKey: options.dataArrayKey ?? "payload",
+    totalDataCountKey: options.totalDataCountKey ?? "totalCount",
+    debounceTimeMs: options.debounceTimeMs ?? 500,
+    searchOnlyMode: options.searchOnlyMode ?? false,
     requestMethod: options.requestMethod ?? "GET",
     queryParams: options.queryParams ?? {},
-    limit: options.limit ?? 15,
-    debounceTimeMs: options.debounceTimeMs ?? 500,
-    cacheTtlMs: 60000,
-    useCache: options.useCache ?? true,
+    postRequestBody: options.postRequestBody ?? null,
+    dataLimitPerRequest: options.dataLimitPerRequest ?? 20,
+    useCache: options.useCache ?? false,
+    cacheTtlSec: options.cacheTtlSec ?? 60,
+    disableCacheExpiration: options.disableCacheExpiration ?? false,
     injector: assertedInjector,
-    initialSearchText: options.initialSearchText,
-    httpContext: options.httpContext
-      ? options.httpContext.set(OffsetPaginatedNgSelectNetworkRequest, true)
-      : new HttpContext().set(OffsetPaginatedNgSelectNetworkRequest, true),
-    throwUnhandledError: options.throwUnhandledError ?? true,
-    handleError: options.handleError
+    httpContext: options.httpContext ?? new HttpContext(),
+    onError: options.onError
   };
+
+  const blackListedQueryKeys = [
+    optionsWithDefaultValue.searchQueryParamKey,
+    optionsWithDefaultValue.pageQueryParamKey,
+    optionsWithDefaultValue.limitQueryParamKey
+  ].map((elem) => elem.toLowerCase());
 
   return runInInjectionContext(optionsWithDefaultValue.injector, () => {
     const destroyRef = inject(DestroyRef);
     const http = inject(HttpClient);
-    const fallbackValue = new OffsetPaginatedDataResponse<TData>([], 0);
-
-    const typeAheadSubject = new Subject<string>();
-    const typeAhead$ = typeAheadSubject.asObservable();
-
-    destroyRef.onDestroy(() => {
-      if (!typeAheadSubject.closed) {
-        typeAheadSubject.complete();
-      }
-    });
+    const typeaheadSubject = new Subject<string>();
+    const typeAhead$ = typeaheadSubject.asObservable();
 
     const internalState = Object.seal({
-      loadMoreWithSameStateNotification: signal<SignalChangeNotification | null>(null),
+      apiCallNotification: new Subject<void>(),
       currentPage: signal(1),
+      currentPageStatus: signal(false),
       isAllDataLoaded: signal(false),
       isLoading: signal(false),
+      searchTermFromSearchEvent: signal<string | null>(null),
       isSelectPanelOpen: signal(false),
-      loadedData: signal(fallbackValue),
-      pageHistory: new Map<number, "success" | "failed" | "pending">(),
-      cache: new Map<string, OffsetPaginatedDataResponse<TData>>(),
-      queryParams: signal({
+      loadedData: signal(defaultData<TData>()),
+      cache: new Map<string, DataContainer<TData>>(),
+      postRequestBody: signal(optionsWithDefaultValue.postRequestBody),
+      queryParamsFromUser: signal<Record<string, string | number | boolean>>({}),
+      queryParams: signal<Record<string, string | number | boolean>>({
         ...optionsWithDefaultValue.queryParams,
         [optionsWithDefaultValue.pageQueryParamKey]: 1,
-        [optionsWithDefaultValue.limitQueryParamKey]: optionsWithDefaultValue.limit
+        [optionsWithDefaultValue.limitQueryParamKey]: optionsWithDefaultValue.dataLimitPerRequest
       })
     });
 
-    // if (optionsWithDefaultValue.initialSearchText) {
-    //   typeAhead$.pipe(startWith(optionsWithDefaultValue.initialSearchText));
-    // }
+    destroyRef.onDestroy(() => {
+      if (!typeaheadSubject.closed) {
+        typeaheadSubject.complete();
+      }
+      if (!internalState.apiCallNotification.closed) {
+        internalState.apiCallNotification.complete();
+      }
+      internalState.cache.clear();
+    });
 
-    interval(optionsWithDefaultValue.cacheTtlMs)
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe(() => {
-        internalState.cache.clear();
-      });
+    if (optionsWithDefaultValue.useCache && !optionsWithDefaultValue.disableCacheExpiration) {
+      interval(optionsWithDefaultValue.cacheTtlSec * 1000)
+        .pipe(takeUntilDestroyed(destroyRef))
+        .subscribe(() => {
+          internalState.cache.clear();
+        });
+    }
 
-    function resetInternalState(resetOptions = { resetCache: false }) {
+    function resetInternalState() {
       internalState.queryParams.set({
         ...internalState.queryParams(),
         [optionsWithDefaultValue.pageQueryParamKey]: 1
       });
 
       internalState.currentPage.set(1);
-      internalState.pageHistory.clear();
+      internalState.currentPageStatus.set(false);
 
-      internalState.loadedData.set(fallbackValue);
+      internalState.loadedData.set(defaultData());
       internalState.isAllDataLoaded.set(false);
       internalState.isLoading.set(false);
-
-      if (resetOptions.resetCache) {
-        internalState.cache.clear();
-      }
     }
 
-    function patchQueryParams(value: Record<string, string | number | boolean>) {
-      internalState.queryParams.update((prev) => {
-        return Object.assign({}, prev, value);
-      });
-    }
+    const notifyApiCall = () => {
+      internalState.apiCallNotification.next();
+    };
 
-    function onNewDataFromApi(newData: OffsetPaginatedDataResponse<TData> | null) {
-      if (newData) {
+    const handleApiResponse = (newData: DataContainer<TData>) => {
+      internalState.currentPageStatus.set(true);
+
+      if (newData.payload.length > 0) {
         internalState.loadedData.update((val) => {
-          return new OffsetPaginatedDataResponse<TData>(
-            [...val.payload, ...newData.payload],
-            newData.totalCount
-          );
+          return {
+            payload: [...val.payload, ...newData.payload],
+            totalCount: newData.totalCount
+          } satisfies DataContainer<TData>;
         });
-
-        internalState.isAllDataLoaded.set(
-          internalState.loadedData().payload.length === newData.totalCount
-        );
       }
-    }
 
-    function loadDataFromApi() {
-      const req = http.get<OffsetPaginatedDataResponse<TData>>(optionsWithDefaultValue.url, {
-        params: optionsWithDefaultValue.queryParams,
-        context: optionsWithDefaultValue.httpContext
-      });
+      internalState.isAllDataLoaded.set(
+        internalState.loadedData().payload.length === newData.totalCount
+      );
+    };
+
+    const loadDataFromApi = () => {
+      const finalUrl = isSignal(url) ? url() : url;
+      const key: CacheKey = {
+        url: finalUrl,
+        body: internalState.postRequestBody(),
+        queryParams: {
+          ...internalState.queryParams(),
+          ...internalState.queryParamsFromUser()
+        }
+      };
+
+      if (optionsWithDefaultValue.requestMethod !== "POST") {
+        delete key["body"];
+      }
+
+      let strKey: string | null = null;
+
+      if (optionsWithDefaultValue.useCache) {
+        strKey = JSON.stringify(key);
+        const cacheData = internalState.cache.get(strKey);
+
+        if (cacheData !== undefined) {
+          return of(cacheData);
+        }
+      }
+
+      let req: Observable<Object>;
+
+      switch (optionsWithDefaultValue.requestMethod) {
+        case "GET":
+          req = defer(() => {
+            internalState.isLoading.set(true);
+            return http.get(finalUrl, {
+              params: {
+                ...internalState.queryParams(),
+                ...internalState.queryParamsFromUser()
+              },
+              context: optionsWithDefaultValue.httpContext.set(
+                OffsetPaginatedNgSelectNetworkRequest,
+                true
+              )
+            });
+          });
+          break;
+
+        case "POST":
+          req = defer(() => {
+            internalState.isLoading.set(true);
+            return http.post(finalUrl, internalState.postRequestBody(), {
+              params: {
+                ...internalState.queryParams(),
+                ...internalState.queryParamsFromUser()
+              },
+              context: optionsWithDefaultValue.httpContext.set(
+                OffsetPaginatedNgSelectNetworkRequest,
+                true
+              )
+            });
+          });
+          break;
+
+        default:
+          throw new Error("Invalid/unsupported request method");
+      }
 
       return req.pipe(
-        tap(() => internalState.isLoading.set(true)),
-        first(),
-        switchMap((elem) => {
-          const checkOne = !elem;
-          const checkTwo = !Object.hasOwn(elem, "payload") || !Object.hasOwn(elem, "totalCount");
-          const checkThree = !Array.isArray(Reflect.get(elem, "payload"));
-
-          if (checkOne || checkTwo || checkThree) {
-            throw new Error("Invalid response body for ng-select");
+        switchMap((rawData: any) => {
+          if (
+            !isValidData(
+              optionsWithDefaultValue.dataArrayKey,
+              optionsWithDefaultValue.totalDataCountKey,
+              rawData
+            )
+          ) {
+            throw new Error(
+              `The response body must be an object. Valid example: { ${optionsWithDefaultValue.dataArrayKey}: [], ${optionsWithDefaultValue.totalDataCountKey}: 0 }`
+            );
           }
 
-          return of(elem);
+          const dataInContainer: DataContainer<TData> = {
+            payload: rawData[optionsWithDefaultValue.dataArrayKey] ?? [],
+            totalCount: rawData[optionsWithDefaultValue.totalDataCountKey] ?? 0
+          };
+
+          return of(dataInContainer);
         }),
-
-        catchError((error) => {
-          if (optionsWithDefaultValue.handleError) {
-            optionsWithDefaultValue.handleError(error);
+        tap((data) => {
+          if (optionsWithDefaultValue.useCache && strKey && data) {
+            internalState.cache.set(strKey, data);
           }
+        }),
+        catchError((error) => {
+          if (optionsWithDefaultValue.onError) {
+            try {
+              optionsWithDefaultValue.onError(error);
+            } catch (errorFromHandler) {
+              console.warn(
+                "Exception in onError is handled internally to keep observable running.",
+                errorFromHandler
+              );
+            }
+          }
+          console.error(error);
           return of(null);
         }),
-        tap(() => internalState.isLoading.set(false)),
-        takeUntilDestroyed(destroyRef)
+        finalize(() => internalState.isLoading.set(false))
       );
-    }
+    };
 
-    typeAhead$
-      .pipe(
-        debounceTime(optionsWithDefaultValue.debounceTimeMs),
-        tap((searchTextValue) => {
-          resetInternalState();
-          patchQueryParams({
-            [optionsWithDefaultValue.searchQueryParamKey]: searchTextValue
-          });
-        }),
-        switchMap(() => loadDataFromApi()),
-        takeUntilDestroyed(destroyRef)
-      )
-      .subscribe((newData) => {
-        onNewDataFromApi(newData);
-      });
-
-    toObservable(internalState.loadMoreWithSameStateNotification)
+    internalState.apiCallNotification
       .pipe(
         filter((item) => item !== null),
         switchMap(() =>
-          internalState.isLoading() || internalState.isAllDataLoaded()
+          internalState.isLoading() ||
+          internalState.isAllDataLoaded() ||
+          !internalState.isSelectPanelOpen()
             ? of(null)
             : loadDataFromApi()
         ),
         takeUntilDestroyed(destroyRef)
       )
-      .subscribe((newData) => {
-        onNewDataFromApi(newData);
+      .subscribe((data) => {
+        if (data) {
+          handleApiResponse(data);
+        } else {
+          internalState.currentPageStatus.set(false);
+        }
       });
 
-    function onOpen() {
-      internalState.isSelectPanelOpen.set(true);
-    }
+    typeAhead$
+      .pipe(
+        combineLatestWith(toObservable(internalState.searchTermFromSearchEvent)),
+        debounceTime(optionsWithDefaultValue.debounceTimeMs),
+        switchMap(([typeaheadValue, searchEventValue]) => {
+          if (typeaheadValue === searchEventValue) {
+            return of(typeaheadValue);
+          }
+          if (typeaheadValue !== searchEventValue && searchEventValue === "") {
+            return of("");
+          }
+          return of(null);
+        }),
+        tap((finalValue) => {
+          resetInternalState();
+          internalState.queryParams.update((currentValue) => {
+            if (!finalValue) {
+              delete currentValue[optionsWithDefaultValue.searchQueryParamKey];
+              return currentValue;
+            }
 
-    function onClose() {
-      internalState.isSelectPanelOpen.set(false);
-      resetInternalState();
-    }
+            return {
+              ...currentValue,
+              [optionsWithDefaultValue.searchQueryParamKey]: finalValue
+            };
+          });
+        }),
+        takeUntilDestroyed(destroyRef)
+      )
+      .subscribe((finalValue) => {
+        if (finalValue === null || (optionsWithDefaultValue.searchOnlyMode && finalValue === "")) {
+          return;
+        }
 
-    function onScrollToEnd() {
-      if (internalState.isAllDataLoaded() || !internalState.isSelectPanelOpen()) {
-        return;
-      }
+        notifyApiCall();
+      });
 
-      if (internalState.pageHistory.get(internalState.currentPage()) === "success") {
-        internalState.currentPage.update((prev) => prev + 1);
-      }
-    }
-
-    function onClear() {
-      resetInternalState();
-    }
-
-    function onBlur() {
-      resetInternalState();
-    }
-
-    const publicState = {
-      onOpen,
-      onClose,
-      onBlur,
-      onScrollToEnd,
-      onClear,
-      typeAheadSubject,
-      queryParams: optionsWithDefaultValue.queryParams,
-      data: internalState.loadedData.asReadonly(),
-      isLoading: internalState.isLoading
+    const publicDataState = {
+      typeaheadSubject,
+      data: computed(() => {
+        return internalState.loadedData().payload;
+      }),
+      isLoading: internalState.isLoading.asReadonly()
     };
 
-    return publicState;
+    const eventHandlers = {
+      onOpen() {
+        internalState.isSelectPanelOpen.set(true);
+        if (!optionsWithDefaultValue.searchOnlyMode) {
+          notifyApiCall();
+        }
+      },
+
+      onClose() {
+        internalState.isSelectPanelOpen.set(false);
+        resetInternalState();
+      },
+
+      onClear() {
+        resetInternalState();
+      },
+
+      onSearch({ term }: { term: string }) {
+        internalState.searchTermFromSearchEvent.set(term);
+      },
+
+      onScrollToEnd() {
+        if (internalState.isAllDataLoaded() || !internalState.isSelectPanelOpen()) {
+          return;
+        }
+
+        if (internalState.currentPageStatus()) {
+          internalState.currentPage.update((currentValue) => {
+            return currentValue + 1;
+          });
+
+          internalState.queryParams.update((currentValue) => {
+            return {
+              ...currentValue,
+              [optionsWithDefaultValue.pageQueryParamKey]: internalState.currentPage()
+            };
+          });
+        }
+        notifyApiCall();
+      }
+    };
+
+    const chainableMethods = {
+      setBody(value: any) {
+        if (optionsWithDefaultValue.requestMethod === "POST") {
+          resetInternalState();
+          internalState.postRequestBody.set(value);
+        }
+        return this;
+      },
+      clearBody() {
+        if (optionsWithDefaultValue.requestMethod === "POST") {
+          resetInternalState();
+          internalState.postRequestBody.set(null);
+        }
+        return this;
+      },
+
+      patchQueryParam(value: Record<string, string | number | boolean>) {
+        Object.keys(value).forEach((key) => {
+          if (blackListedQueryKeys.includes(key.toLowerCase())) {
+            delete value[key];
+          }
+        });
+
+        if (Object.keys(value).length > 0) {
+          resetInternalState();
+
+          internalState.queryParamsFromUser.update((currentValue) => {
+            return {
+              ...currentValue,
+              ...value
+            };
+          });
+        }
+
+        return this;
+      },
+
+      removeQueryParam(key: string) {
+        resetInternalState();
+        internalState.queryParamsFromUser.update((currentValue) => {
+          delete currentValue[key];
+          return currentValue;
+        });
+
+        return this;
+      },
+      removeAllQueryParams() {
+        resetInternalState();
+        internalState.queryParamsFromUser.set({});
+        return this;
+      }
+    };
+
+    return {
+      ...eventHandlers,
+      ...publicDataState,
+      ...chainableMethods
+    };
   });
 }

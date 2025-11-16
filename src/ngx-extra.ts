@@ -45,7 +45,7 @@ export function debounceSignal<T>(
     if (isSignal(source)) {
       return toSignal(toObservable(source).pipe(debounceTime(ms), takeUntilDestroyed()));
     } else if (source instanceof Observable) {
-      toSignal(source.pipe(debounceTime(ms), takeUntilDestroyed()));
+      return toSignal(source.pipe(debounceTime(ms), takeUntilDestroyed()));
     } else {
       throw new Error("Invalid source");
     }
