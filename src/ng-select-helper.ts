@@ -143,7 +143,7 @@ const defaultResetOpts: NgSelectHelperResetOpts = {
  */
 
 /**
- * @deprecated Use `createOffsetPaginatedNgSelectState` instead.
+ * @deprecated Migrate to `createOffsetPaginatedNgSelectState`
  */
 export class NgSelectHelper<TData> {
   constructor(
@@ -659,7 +659,7 @@ export class NgSelectHelper<TData> {
 }
 
 /**
- * @deprecated Use `createOffsetPaginatedNgSelectState` instead.
+ * @deprecated Migrate to `createOffsetPaginatedNgSelectState`
  */
 export function createNgSelectHelper<T>(
   options: Omit<NgSelectHelperOpts, "httpClient" | "destroyRef"> & { injector?: Injector }
