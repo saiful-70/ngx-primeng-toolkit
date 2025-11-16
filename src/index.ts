@@ -22,6 +22,7 @@ export * from "./component-data-storage";
 
 // Export ng-select helper
 export * from "./ng-select-helper";
+export * from "./offset-paginated-ng-select-state";
 
 // Export ng-select utilities
 export * from "./ng-select-utils";
