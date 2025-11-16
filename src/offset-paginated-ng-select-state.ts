@@ -5,6 +5,7 @@ import {
   DestroyRef,
   inject,
   Injector,
+  isDevMode,
   isSignal,
   runInInjectionContext,
   Signal,
@@ -91,29 +92,32 @@ function defaultData<T>() {
 
 export function createOffsetPaginatedNgSelectState<TData>(
   url: string | Signal<string>,
-  options: OffsetPaginatedNgSelectStateOptions
+  options?: OffsetPaginatedNgSelectStateOptions
 ) {
-  !options.injector && assertInInjectionContext(createOffsetPaginatedNgSelectState);
-  const assertedInjector = options.injector ?? inject(Injector);
+  if (isDevMode() && !options?.injector) {
+    assertInInjectionContext(createOffsetPaginatedNgSelectState);
+  }
+
+  const assertedInjector = options?.injector ?? inject(Injector);
 
   const optionsWithDefaultValue: DefaultOptions = {
-    searchQueryParamKey: options.searchQueryParamKey ?? "searchText",
-    pageQueryParamKey: options.pageQueryParamKey ?? "page",
-    limitQueryParamKey: options.limitQueryParamKey ?? "limit",
-    dataArrayKey: options.dataArrayKey ?? "payload",
-    totalDataCountKey: options.totalDataCountKey ?? "totalCount",
-    debounceTimeMs: options.debounceTimeMs ?? 500,
-    searchOnlyMode: options.searchOnlyMode ?? false,
-    requestMethod: options.requestMethod ?? "GET",
-    queryParams: options.queryParams ?? {},
-    postRequestBody: options.postRequestBody ?? null,
-    dataLimitPerRequest: options.dataLimitPerRequest ?? 20,
-    useCache: options.useCache ?? false,
-    cacheTtlSec: options.cacheTtlSec ?? 60,
-    disableCacheExpiration: options.disableCacheExpiration ?? false,
+    searchQueryParamKey: options?.searchQueryParamKey ?? "searchText",
+    pageQueryParamKey: options?.pageQueryParamKey ?? "page",
+    limitQueryParamKey: options?.limitQueryParamKey ?? "limit",
+    dataArrayKey: options?.dataArrayKey ?? "payload",
+    totalDataCountKey: options?.totalDataCountKey ?? "totalCount",
+    debounceTimeMs: options?.debounceTimeMs ?? 500,
+    searchOnlyMode: options?.searchOnlyMode ?? false,
+    requestMethod: options?.requestMethod ?? "GET",
+    queryParams: options?.queryParams ?? {},
+    postRequestBody: options?.postRequestBody ?? null,
+    dataLimitPerRequest: options?.dataLimitPerRequest ?? 20,
+    useCache: options?.useCache ?? false,
+    cacheTtlSec: options?.cacheTtlSec ?? 60,
+    disableCacheExpiration: options?.disableCacheExpiration ?? false,
     injector: assertedInjector,
-    httpContext: options.httpContext ?? new HttpContext(),
-    onError: options.onError
+    httpContext: options?.httpContext ?? new HttpContext(),
+    onError: options?.onError
   };
 
   const blackListedQueryKeys = [

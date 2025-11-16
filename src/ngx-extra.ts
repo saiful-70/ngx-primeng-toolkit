@@ -5,6 +5,7 @@ import {
   effect,
   inject,
   Injector,
+  isDevMode,
   isSignal,
   runInInjectionContext,
   Signal,
@@ -38,7 +39,9 @@ export function debounceSignal<T>(
   ms: number,
   injector?: Injector
 ) {
-  !injector && assertInInjectionContext(debounceSignal);
+  if (isDevMode() && !injector) {
+    assertInInjectionContext(debounceSignal);
+  }
   const assertedInjector = injector ?? inject(Injector);
 
   return runInInjectionContext(assertedInjector, () => {
