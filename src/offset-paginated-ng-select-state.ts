@@ -429,6 +429,11 @@ export function createOffsetPaginatedNgSelectState<TData>(
     };
 
     const chainableMethods = {
+      clearCache() {
+        internalState.cache.clear();
+        return this;
+      },
+
       setBody(value: any): OffsetPaginatedNgSelectStateChainableMethods {
         if (optionsWithDefaultValue.requestMethod === "POST") {
           resetInternalState();
