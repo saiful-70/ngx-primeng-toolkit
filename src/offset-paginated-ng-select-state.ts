@@ -35,6 +35,7 @@ type DataContainer<T> = {
 };
 
 interface OffsetPaginatedNgSelectStateChainableMethods {
+  clearCache(): this;
   setBody(value: any): this;
   clearBody(): this;
   patchQueryParam(value: Record<string, string | number | boolean>): this;
@@ -428,8 +429,8 @@ export function createOffsetPaginatedNgSelectState<TData>(
       }
     };
 
-    const chainableMethods = {
-      clearCache() {
+    const chainableMethods: OffsetPaginatedNgSelectStateChainableMethods = {
+      clearCache(): OffsetPaginatedNgSelectStateChainableMethods {
         internalState.cache.clear();
         return this;
       },
