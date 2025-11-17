@@ -67,7 +67,9 @@ export function createNumericSignalChangeNotifier() {
 }
 
 export function duringDestroy(fn: () => void, injector?: Injector) {
-  !injector && assertInInjectionContext(duringDestroy);
+  if (isDevMode() && !injector) {
+    assertInInjectionContext(duringDestroy);
+  }
   const assertedInjector = injector ?? inject(Injector);
 
   runInInjectionContext(assertedInjector, () => {
@@ -82,7 +84,9 @@ type RxSubscriberOptions<T> = {
 };
 
 export function rxSubscriber<T>(options: RxSubscriberOptions<T>) {
-  !options.injector && assertInInjectionContext(duringDestroy);
+  if (isDevMode() && !options.injector) {
+    assertInInjectionContext(rxSubscriber);
+  }
   const assertedInjector = options.injector ?? inject(Injector);
 
   runInInjectionContext(assertedInjector, () => {
