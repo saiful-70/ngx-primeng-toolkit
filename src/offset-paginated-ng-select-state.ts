@@ -34,15 +34,15 @@ type DataContainer<T> = {
   totalCount: number;
 };
 
-type ChainableVoid = {
-  setBody(value: any): ChainableVoid;
-  clearBody(): ChainableVoid;
-  patchQueryParam(value: Record<string, string | number | boolean>): ChainableVoid;
-  removeQueryParam(key: string): ChainableVoid;
-  removeAllQueryParams(): ChainableVoid;
-};
+interface OffsetPaginatedNgSelectStateChainableMethods {
+  setBody(value: any): this;
+  clearBody(): this;
+  patchQueryParam(value: Record<string, string | number | boolean>): this;
+  removeQueryParam(key: string): this;
+  removeAllQueryParams(): this;
+}
 
-type OffsetPaginatedNgSelectStateOptions = {
+export type OffsetPaginatedNgSelectStateOptions = {
   searchOnlyMode?: boolean;
   searchQueryParamKey?: string;
   pageQueryParamKey?: string;
@@ -429,14 +429,14 @@ export function createOffsetPaginatedNgSelectState<TData>(
     };
 
     const chainableMethods = {
-      setBody(value: any): ChainableVoid {
+      setBody(value: any): OffsetPaginatedNgSelectStateChainableMethods {
         if (optionsWithDefaultValue.requestMethod === "POST") {
           resetInternalState();
           internalState.postRequestBody.set(value);
         }
         return this;
       },
-      clearBody(): ChainableVoid {
+      clearBody(): OffsetPaginatedNgSelectStateChainableMethods {
         if (optionsWithDefaultValue.requestMethod === "POST") {
           resetInternalState();
           internalState.postRequestBody.set(null);
@@ -444,7 +444,9 @@ export function createOffsetPaginatedNgSelectState<TData>(
         return this;
       },
 
-      patchQueryParam(value: Record<string, string | number | boolean>): ChainableVoid {
+      patchQueryParam(
+        value: Record<string, string | number | boolean>
+      ): OffsetPaginatedNgSelectStateChainableMethods {
         Object.keys(value).forEach((key) => {
           if (blackListedQueryKeys.includes(key.toLowerCase())) {
             delete value[key];
@@ -465,7 +467,7 @@ export function createOffsetPaginatedNgSelectState<TData>(
         return this;
       },
 
-      removeQueryParam(key: string): ChainableVoid {
+      removeQueryParam(key: string): OffsetPaginatedNgSelectStateChainableMethods {
         resetInternalState();
         internalState.queryParamsFromUser.update((currentValue) => {
           delete currentValue[key];
@@ -474,7 +476,7 @@ export function createOffsetPaginatedNgSelectState<TData>(
 
         return this;
       },
-      removeAllQueryParams(): ChainableVoid {
+      removeAllQueryParams(): OffsetPaginatedNgSelectStateChainableMethods {
         resetInternalState();
         internalState.queryParamsFromUser.set({});
         return this;
