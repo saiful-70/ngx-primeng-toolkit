@@ -247,12 +247,6 @@ export class SlimComponentState {
 
   readonly isAnyNetworkOperationRunning = signal<boolean>(false);
   readonly isDataManipulationUiActive = signal<boolean>(false);
-  readonly isUpdateUiActive = signal<boolean>(false);
-  readonly isCreateUiActive = signal<boolean>(false);
-
-  readonly isCreateOrUpdateUiActive = computed(() => {
-    return this.isCreateUiActive() || this.isUpdateUiActive();
-  });
 
   readonly titleWithManipulationMode = computed(() => {
     return `${this.manipulationModeLabel()}  ${this.title()}`;
@@ -353,25 +347,6 @@ export class SlimComponentState {
     return this;
   };
 
-  /**
-   * Sets the update UI active status
-   * @param status - Whether update UI is active
-   * @returns This instance for method chaining
-   */
-  setIsUpdateUiActive = (status: boolean) => {
-    this.isUpdateUiActive.set(status);
-    return this;
-  };
-
-  /**
-   * Sets the create UI active status
-   * @param status - Whether create UI is active
-   * @returns This instance for method chaining
-   */
-  setIsCreateUiActive = (status: boolean) => {
-    this.isCreateUiActive.set(status);
-    return this;
-  };
 
   /**
    * Resets all state to default values
@@ -385,8 +360,6 @@ export class SlimComponentState {
     this.title.set("");
     this.isAnyNetworkOperationRunning.set(false);
     this.isDataManipulationUiActive.set(false);
-    this.isUpdateUiActive.set(false);
-    this.isCreateUiActive.set(false);
     return this;
   };
 }
