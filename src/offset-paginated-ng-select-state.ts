@@ -397,7 +397,6 @@ export function createOffsetPaginatedNgSelectState<TData>(
 
       onClose() {
         internalState.isSelectPanelOpen.set(false);
-        resetInternalState();
       },
 
       onClear() {
@@ -409,7 +408,11 @@ export function createOffsetPaginatedNgSelectState<TData>(
       },
 
       onScrollToEnd() {
-        if (internalState.isAllDataLoaded() || !internalState.isSelectPanelOpen()) {
+        if (
+          internalState.isAllDataLoaded() ||
+          internalState.isLoading() ||
+          !internalState.isSelectPanelOpen()
+        ) {
           return;
         }
 

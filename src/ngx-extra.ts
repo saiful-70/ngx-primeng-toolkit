@@ -34,21 +34,15 @@ export function throwResourceError<T = any>(resorce: HttpResourceRef<T>, injecto
     });
   });
 }
-export function debounceSignal<T>(
-  source: Signal<T> | Observable<T>,
-  ms: number,
-  injector?: Injector
-) {
+export function debouncedSignal<T>(source: Signal<T>, ms: number, injector?: Injector) {
   if (isDevMode() && !injector) {
-    assertInInjectionContext(debounceSignal);
+    assertInInjectionContext(debouncedSignal);
   }
   const assertedInjector = injector ?? inject(Injector);
 
   return runInInjectionContext(assertedInjector, () => {
     if (isSignal(source)) {
       return toSignal(toObservable(source).pipe(debounceTime(ms), takeUntilDestroyed()));
-    } else if (source instanceof Observable) {
-      return toSignal(source.pipe(debounceTime(ms), takeUntilDestroyed()));
     } else {
       throw new Error("Invalid source");
     }
