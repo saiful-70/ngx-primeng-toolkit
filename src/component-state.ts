@@ -260,17 +260,17 @@ export class SlimComponentState {
       case "update":
         return "Update";
 
-      case "create-child":
-        return "Create Child";
-
       case "delete":
         return "Delete";
 
-      case "view":
-        return "View";
+      case "create-child":
+        return "Create Child";
 
-      case "save":
-        return "Save";
+      case "update-child":
+        return "Update Child";
+
+      case "delete-child":
+        return "Delete Child";
 
       default:
         return "";
@@ -346,7 +346,6 @@ export class SlimComponentState {
     this.isDataManipulationUiActive.set(status);
     return this;
   };
-
 
   /**
    * Resets all state to default values
