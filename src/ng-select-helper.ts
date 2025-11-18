@@ -153,6 +153,7 @@ const defaultResetOpts: NgSelectHelperResetOpts = {
  * - `setQueryParams` method is removed.  Current example approach: `ngSelectState.removeAllQueryParams().patchQueryParam({id: 123})`
  * - `setRouteParam` method is removed. If route param needs update, pass a signal of type string in the url and update the signal afterwards.
  * - Cache is now disabled by default and supports TTL.
+ * - `createOffsetPaginatedNgSelectState` must be run within injection context. Provide injector manually to run outside injection context.
  */
 export class NgSelectHelper<TData> {
   constructor(
@@ -678,6 +679,7 @@ export class NgSelectHelper<TData> {
  * - `setQueryParams` method is removed.  Current example approach: `ngSelectState.removeAllQueryParams().patchQueryParam({id: 123})`
  * - `setRouteParam` method is removed. If route param needs update, pass a signal of type string in the url and update the signal afterwards.
  * - Cache is now disabled by default and supports TTL.
+ * - `createOffsetPaginatedNgSelectState` must be run within injection context. Provide injector manually to run outside injection context.
  */
 export function createNgSelectHelper<T>(
   options: Omit<NgSelectHelperOpts, "httpClient" | "destroyRef"> & { injector?: Injector }
