@@ -238,7 +238,7 @@ export class ComponentState {
 }
 
 export class SlimComponentState {
-  readonly isCheckBoxSelectEnabled = signal<boolean>(false);
+  readonly isCheckBoxSelectionEnabled = signal<boolean>(false);
   readonly canSelectRow = signal<boolean>(false);
   readonly canSelectMultipleItem = signal<boolean>(false);
 
@@ -302,8 +302,8 @@ export class SlimComponentState {
    * @param canSelect - Whether checkbox selection is enabled
    * @returns This instance for method chaining
    */
-  setIsCheckBoxSelectEnabled = (canSelect: boolean) => {
-    this.isCheckBoxSelectEnabled.set(canSelect);
+  setIsCheckBoxSelectionEnabled = (canSelect: boolean) => {
+    this.isCheckBoxSelectionEnabled.set(canSelect);
     return this;
   };
 
@@ -352,7 +352,7 @@ export class SlimComponentState {
    * @returns This instance for method chaining
    */
   reset = () => {
-    this.isCheckBoxSelectEnabled.set(false);
+    this.isCheckBoxSelectionEnabled.set(false);
     this.canSelectRow.set(false);
     this.canSelectMultipleItem.set(false);
     this.manipulationMode.set(null);
