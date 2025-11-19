@@ -29,5 +29,3 @@ export * from "./ng-select-utils";
 
 // Export all types and interfaces
 export * from "./types";
-
-export * from "./ngx-extra";
