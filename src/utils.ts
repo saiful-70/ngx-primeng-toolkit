@@ -88,9 +88,9 @@ export class ReloadNotification {
  * Represents a tree node structure compatible with PrimeNG TreeNode
  * @template T The type of data stored in the node
  */
-export type TreeNode<T> = {
+export type TreeItem<T> = {
   data: T;
-  children?: TreeNode<T>[];
+  children?: TreeItem<T>[];
 };
 
 /**
@@ -128,13 +128,13 @@ export function createHierarchicalTree<T extends Record<string, any>>(
   idKey: string,
   parentIdKey: string,
   expanded: boolean = false
-): TreeNode<T>[] {
+): TreeItem<T>[] {
   if (!Array.isArray(data)) {
     throw new Error("data must be an array");
   }
 
   // Create a map for quick lookup and convert to TreeNode format
-  const categoryMap = new Map<string | number, TreeNode<T>>(
+  const categoryMap = new Map<string | number, TreeItem<T>>(
     data.map((item) => {
       if (!Object.hasOwn(item, idKey) || !Object.hasOwn(item, parentIdKey)) {
         throw new Error("idKey or parentIdKey is missing", { cause: item });
@@ -150,7 +150,7 @@ export function createHierarchicalTree<T extends Record<string, any>>(
     })
   );
 
-  const rootNodes: TreeNode<T>[] = [];
+  const rootNodes: TreeItem<T>[] = [];
 
   // Build the tree by linking children to their parents
   data.forEach((item) => {
