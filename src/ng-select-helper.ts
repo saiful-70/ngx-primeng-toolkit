@@ -147,6 +147,7 @@ const defaultResetOpts: NgSelectHelperResetOpts = {
  *
  * **Migration Guide:**
  *
+ * - `init()` method is removed because no manual state initialization is needed.
  * - Loaded data is exposed as data signal. Use it like: `[items]="ngSelectState.data()"`
  * - `search` event handling is now compulsory with `onSearch`. Handle it like: `(search)="ngSelectState.onSearch($event)"`
  * - `blur` event handling is not required and the method `onBlur` is removed.
@@ -674,6 +675,7 @@ export class NgSelectHelper<TData> {
  *
  * **Migration Guide:**
  *
+ * - `init()` method is removed because no manual state initialization is needed.
  * - Loaded data is exposed as data signal. Use it like: `[items]="ngSelectState.data()"`
  * - `search` event handling is now compulsory with `onSearch`. Handle it like: `(search)="ngSelectState.onSearch($event)"`
  * - `blur` event handling is not required and the method `onBlur` is removed.
