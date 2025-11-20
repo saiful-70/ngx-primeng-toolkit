@@ -146,14 +146,6 @@ export enum ManipulationType {
   Save = "save"
 }
 
-export type ManipulationMode =
-  | "create"
-  | "update"
-  | "delete"
-  | "create-child"
-  | "update-child"
-  | "delete-child";
-
 /**
  * Key-value pair type for common data structures
  * @template K The type of the key
