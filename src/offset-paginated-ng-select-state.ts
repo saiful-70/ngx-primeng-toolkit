@@ -34,15 +34,6 @@ type DataContainer<T> = {
   totalCount: number;
 };
 
-interface OffsetPaginatedNgSelectStateChainableMethods {
-  clearCache(): this;
-  setBody(value: any): this;
-  clearBody(): this;
-  patchQueryParam(value: Record<string, string | number | boolean>): this;
-  removeQueryParam(key: string): this;
-  removeAllQueryParams(): this;
-}
-
 export type OffsetPaginatedNgSelectStateOptions = {
   searchOnlyMode?: boolean;
   searchQueryParamKey?: string;
@@ -379,15 +370,19 @@ export function createOffsetPaginatedNgSelectState<TData>(
         notifyApiCall();
       });
 
-    const publicDataState = {
+    return Object.seal({
+      // data state
       typeaheadSubject,
       data: computed(() => {
         return internalState.loadedData().payload;
       }),
-      isLoading: internalState.isLoading.asReadonly()
-    };
+      isLoading: internalState.isLoading.asReadonly(),
+      // event handlers
+      clearCache() {
+        internalState.cache.clear();
+        return this;
+      },
 
-    const eventHandlers = {
       onOpen() {
         internalState.isSelectPanelOpen.set(true);
         if (!optionsWithDefaultValue.searchOnlyMode) {
@@ -429,23 +424,16 @@ export function createOffsetPaginatedNgSelectState<TData>(
           });
         }
         notifyApiCall();
-      }
-    };
-
-    const chainableMethods: OffsetPaginatedNgSelectStateChainableMethods = {
-      clearCache(): OffsetPaginatedNgSelectStateChainableMethods {
-        internalState.cache.clear();
-        return this;
       },
-
-      setBody(value: any): OffsetPaginatedNgSelectStateChainableMethods {
+      // chainable methods
+      setBody(value: any) {
         if (optionsWithDefaultValue.requestMethod === "POST") {
           resetInternalState();
           internalState.postRequestBody.set(value);
         }
         return this;
       },
-      clearBody(): OffsetPaginatedNgSelectStateChainableMethods {
+      clearBody() {
         if (optionsWithDefaultValue.requestMethod === "POST") {
           resetInternalState();
           internalState.postRequestBody.set(null);
@@ -453,9 +441,7 @@ export function createOffsetPaginatedNgSelectState<TData>(
         return this;
       },
 
-      patchQueryParam(
-        value: Record<string, string | number | boolean>
-      ): OffsetPaginatedNgSelectStateChainableMethods {
+      patchQueryParam(value: Record<string, string | number | boolean>) {
         Object.keys(value).forEach((key) => {
           if (blackListedQueryKeys.includes(key.toLowerCase())) {
             delete value[key];
@@ -476,7 +462,7 @@ export function createOffsetPaginatedNgSelectState<TData>(
         return this;
       },
 
-      removeQueryParam(key: string): OffsetPaginatedNgSelectStateChainableMethods {
+      removeQueryParam(key: string) {
         resetInternalState();
         internalState.queryParamsFromUser.update((currentValue) => {
           delete currentValue[key];
@@ -485,17 +471,11 @@ export function createOffsetPaginatedNgSelectState<TData>(
 
         return this;
       },
-      removeAllQueryParams(): OffsetPaginatedNgSelectStateChainableMethods {
+      removeAllQueryParams() {
         resetInternalState();
         internalState.queryParamsFromUser.set({});
         return this;
       }
-    };
-
-    return {
-      ...eventHandlers,
-      ...publicDataState,
-      ...chainableMethods
-    };
+    });
   });
 }
