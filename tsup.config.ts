@@ -9,7 +9,7 @@ export default defineConfig({
   minify: false,
   external: [
     '@angular/common',
-    '@angular/core', 
+    '@angular/core',
     '@ngrx/signals',
     'primeng/api',
     'primeng/table',
