@@ -61,13 +61,13 @@
     "url": "https://github.com/saiful-70/ngx-primeng-toolkit/issues"
   },
   "devDependencies": {
-    "@angular/common": "^20.3.10",
-    "@angular/core": "^20.3.10",
+    "@angular/common": "^20.3.14",
+    "@angular/core": "^20.3.14",
     "@ngrx/signals": "^20.1.0",
-    "@types/node": "^24.10.0",
+    "@types/node": "^24.10.1",
     "primeng": "^20.3.0",
     "rxjs": "^7.8.2",
-    "tsup": "^8.5.0",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "zod": "^3.25.76"
   },
@@ -78,7 +78,7 @@
     "@ngrx/signals": ">=19.0.0",
     "primeng": ">=19.0.0",
     "rxjs": ">=7.0.0",
-    "zod": ">=3.0.0"
+    "zod": "^3.25.76"
   },
   "peerDependenciesMeta": {
     "@angular/common": {

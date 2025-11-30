@@ -90,12 +90,12 @@ function defaultData<T>() {
   } satisfies DataContainer<T>;
 }
 
-export function createOffsetPaginatedNgSelectState<TData>(
+export function offsetPaginatedNgSelectState<TData>(
   url: string | Signal<string>,
   options?: OffsetPaginatedNgSelectStateOptions
 ) {
   if (isDevMode() && !options?.injector) {
-    assertInInjectionContext(createOffsetPaginatedNgSelectState);
+    assertInInjectionContext(offsetPaginatedNgSelectState);
   }
 
   const assertedInjector = options?.injector ?? inject(Injector);
@@ -125,6 +125,12 @@ export function createOffsetPaginatedNgSelectState<TData>(
     optionsWithDefaultValue.pageQueryParamKey,
     optionsWithDefaultValue.limitQueryParamKey
   ].map((elem) => elem.toLowerCase());
+
+  Object.keys(optionsWithDefaultValue.queryParams).forEach((key) => {
+    if (blackListedQueryKeys.includes(key.toLowerCase())) {
+      delete optionsWithDefaultValue.queryParams[key];
+    }
+  });
 
   return runInInjectionContext(optionsWithDefaultValue.injector, () => {
     const destroyRef = inject(DestroyRef);
