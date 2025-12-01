@@ -90,10 +90,32 @@ function defaultData<T>() {
   } satisfies DataContainer<T>;
 }
 
+export interface OffsetPaginatedNgSelectStateRef<TData> {
+  // Data state
+  typeaheadSubject: Subject<string>;
+  data: Signal<TData[]>;
+  isLoading: Signal<boolean>;
+
+  // Event handlers
+  clearCache(): this;
+  onOpen(): void;
+  onClose(): void;
+  onClear(): void;
+  onSearch({ term }: { term: string }): void;
+  onScrollToEnd(): void;
+
+  // Chainable methods
+  setBody(value: any): this;
+  clearBody(): this;
+  patchQueryParam(value: Record<string, string | number | boolean>): this;
+  removeQueryParam(key: string): this;
+  removeAllQueryParams(): this;
+}
+
 export function offsetPaginatedNgSelectState<TData>(
   url: string | Signal<string>,
   options?: OffsetPaginatedNgSelectStateOptions
-) {
+): OffsetPaginatedNgSelectStateRef<TData> {
   if (isDevMode() && !options?.injector) {
     assertInInjectionContext(offsetPaginatedNgSelectState);
   }
@@ -404,8 +426,10 @@ export function offsetPaginatedNgSelectState<TData>(
         resetInternalState();
       },
 
-      onSearch({ term }: { term: string }) {
-        internalState.searchTermFromSearchEvent.set(term);
+      onSearch(event: Record<string, unknown> & { term: string }) {
+        if (Object.hasOwn(event, "term")) {
+          internalState.searchTermFromSearchEvent.set(event.term);
+        }
       },
 
       onScrollToEnd() {
