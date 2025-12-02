@@ -147,13 +147,14 @@ const defaultResetOpts: NgSelectHelperResetOpts = {
  *
  * **Migration Guide:**
  *
- * - `init()` method is removed because no manual state initialization is needed.
- * - Loaded data is exposed as data signal. Use it like: `[items]="ngSelectState.data()"`
+ * - `init` method is removed because no manual state initialization is needed.
+ * - `resetAll` method is renamed to `reset`.
+ * -  Loaded data is exposed as data signal. Use it like: `[items]="ngSelectState.data()"`
  * - `search` event handling is now compulsory with `onSearch`. Handle it like: `(search)="ngSelectState.onSearch($event)"`
  * - `blur` event handling is not required and the method `onBlur` is removed.
  * - `setQueryParams` method is removed.  Current example approach: `ngSelectState.removeAllQueryParams().patchQueryParam({id: 123})`
  * - `setRouteParam` method is removed. If route param needs update, pass a signal of type string in the url and update the signal afterwards.
- * - Cache is now disabled by default and supports TTL.
+ * -  Cache is now disabled by default and supports TTL.
  * - `skipLoadingSpinner` is removed. Instead, use the exported `OffsetPaginatedNgSelectNetworkRequest` http context token.
  * - `offsetPaginatedNgSelectState` must be run within injection context. Provide injector manually to run outside injection context.
  */
@@ -675,13 +676,14 @@ export class NgSelectHelper<TData> {
  *
  * **Migration Guide:**
  *
- * - `init()` method is removed because no manual state initialization is needed.
- * - Loaded data is exposed as data signal. Use it like: `[items]="ngSelectState.data()"`
+ * - `init` method is removed because no manual state initialization is needed.
+ * - `resetAll` method is renamed to `reset`.
+ * -  Loaded data is exposed as data signal. Use it like: `[items]="ngSelectState.data()"`
  * - `search` event handling is now compulsory with `onSearch`. Handle it like: `(search)="ngSelectState.onSearch($event)"`
  * - `blur` event handling is not required and the method `onBlur` is removed.
  * - `setQueryParams` method is removed.  Current example approach: `ngSelectState.removeAllQueryParams().patchQueryParam({id: 123})`
  * - `setRouteParam` method is removed. If route param needs update, pass a signal of type string in the url and update the signal afterwards.
- * - Cache is now disabled by default and supports TTL.
+ * -  Cache is now disabled by default and supports TTL.
  * - `skipLoadingSpinner` is removed. Instead, use the exported `OffsetPaginatedNgSelectNetworkRequest` http context token.
  * - `offsetPaginatedNgSelectState` must be run within injection context. Provide injector manually to run outside injection context.
  */

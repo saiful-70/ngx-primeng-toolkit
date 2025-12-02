@@ -17,15 +17,14 @@ import {
   combineLatestWith,
   debounceTime,
   defer,
-  EMPTY,
   filter,
   finalize,
   interval,
   Observable,
   of,
   Subject,
-  Subscription,
   switchMap,
+  takeUntil,
   tap
 } from "rxjs";
 import { cleanNullishFromObject } from "./utils";
@@ -93,13 +92,27 @@ function defaultData<T>() {
   } satisfies DataContainer<T>;
 }
 
+const defaultResetOpts = {
+  resetQueryParams: false,
+  resetBody: false,
+  resetCache: false
+};
+
+type OffsetPaginatedNgSelectStateResetOptions = {
+  resetQueryParams: boolean;
+  resetBody: boolean;
+  resetCache: boolean;
+};
+
 export interface OffsetPaginatedNgSelectStateRef<TData> {
   // Data state
   typeaheadSubject: Subject<string>;
   data: Signal<TData[]>;
   isLoading: Signal<boolean>;
+  queryParams: Signal<Record<string, string | number | boolean>>;
+  postRequestBody: Signal<any>;
 
-  // Event handlers
+  // Event handler methods
   clearCache(): this;
   onOpen(): void;
   onClose(): void;
@@ -107,7 +120,8 @@ export interface OffsetPaginatedNgSelectStateRef<TData> {
   onSearch({ term }: { term: string }): void;
   onScrollToEnd(): void;
 
-  // Chainable methods
+  // methods
+  reset(options?: OffsetPaginatedNgSelectStateResetOptions): void;
   setBody(value: any): this;
   clearBody(): this;
   patchQueryParam(value: Record<string, string | number | boolean>): this;
@@ -145,12 +159,6 @@ export function offsetPaginatedNgSelectState<TData>(
     onError: options?.onError
   };
 
-  const defaultResetOpts = {
-    resetQueryParams: false,
-    resetBody: false,
-    resetCache: false
-  };
-
   const blackListedQueryKeys = [
     optionsWithDefaultValue.searchQueryParamKey,
     optionsWithDefaultValue.pageQueryParamKey,
@@ -180,7 +188,7 @@ export function offsetPaginatedNgSelectState<TData>(
       loadedData: signal(defaultData<TData>()),
       cache: new Map<string, DataContainer<TData>>(),
       searchText: signal<string | null>(null),
-      runningApiReqSubscription: Subscription.EMPTY,
+      apiCallAbortNotifier: new Subject<void>(),
       postRequestBody: signal(optionsWithDefaultValue.postRequestBody),
       queryParamsFromUser: signal<Record<string, string | number | boolean>>({
         ...optionsWithDefaultValue.queryParams
@@ -208,9 +216,16 @@ export function offsetPaginatedNgSelectState<TData>(
       if (!typeaheadSubject.closed) {
         typeaheadSubject.complete();
       }
+
+      if (!internalState.apiCallAbortNotifier.closed) {
+        internalState.apiCallAbortNotifier.next();
+        internalState.apiCallAbortNotifier.complete();
+      }
+
       if (!internalState.apiCallNotification.closed) {
         internalState.apiCallNotification.complete();
       }
+
       internalState.cache.clear();
     });
 
@@ -222,10 +237,8 @@ export function offsetPaginatedNgSelectState<TData>(
         });
     }
 
-    function reset(options = defaultResetOpts) {
-      if (!internalState.runningApiReqSubscription.closed) {
-        internalState.runningApiReqSubscription.unsubscribe();
-      }
+    function reset(options: OffsetPaginatedNgSelectStateResetOptions = defaultResetOpts) {
+      internalState.apiCallAbortNotifier.next();
       internalState.currentPage.set(1);
       internalState.isCurrentPageSuccessful.set(false);
       internalState.searchText.set(null);
@@ -364,24 +377,21 @@ export function offsetPaginatedNgSelectState<TData>(
           console.error(error);
           return of(null);
         }),
-        finalize(() => internalState.isLoading.set(false))
+        finalize(() => internalState.isLoading.set(false)),
+        takeUntil(internalState.apiCallAbortNotifier)
       );
     };
 
     internalState.apiCallNotification
       .pipe(
         filter((item) => item !== null),
-        switchMap(() => {
-          if (
-            internalState.isLoading() ||
-            internalState.isAllDataLoaded() ||
-            !internalState.isSelectPanelOpen()
-          ) {
-            return of(null);
-          } else {
-            return loadDataFromApi();
-          }
-        }),
+        switchMap(() =>
+          internalState.isLoading() ||
+          internalState.isAllDataLoaded() ||
+          !internalState.isSelectPanelOpen()
+            ? of(null)
+            : loadDataFromApi()
+        ),
         filter((val) => val !== null),
         takeUntilDestroyed(destroyRef)
       )
@@ -419,6 +429,9 @@ export function offsetPaginatedNgSelectState<TData>(
 
     return Object.seal({
       // data state
+      reset,
+      queryParams: finalQueryParams,
+      postRequestBody: internalState.postRequestBody.asReadonly(),
       typeaheadSubject,
       data: computed(() => {
         return internalState.loadedData().payload;
