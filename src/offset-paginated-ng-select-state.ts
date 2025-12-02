@@ -17,15 +17,18 @@ import {
   combineLatestWith,
   debounceTime,
   defer,
+  EMPTY,
   filter,
   finalize,
   interval,
   Observable,
   of,
   Subject,
+  Subscription,
   switchMap,
   tap
 } from "rxjs";
+import { cleanNullishFromObject } from "./utils";
 
 export const OffsetPaginatedNgSelectNetworkRequest = new HttpContextToken(() => false);
 
@@ -142,6 +145,12 @@ export function offsetPaginatedNgSelectState<TData>(
     onError: options?.onError
   };
 
+  const defaultResetOpts = {
+    resetQueryParams: false,
+    resetBody: false,
+    resetCache: false
+  };
+
   const blackListedQueryKeys = [
     optionsWithDefaultValue.searchQueryParamKey,
     optionsWithDefaultValue.pageQueryParamKey,
@@ -163,20 +172,36 @@ export function offsetPaginatedNgSelectState<TData>(
     const internalState = Object.seal({
       apiCallNotification: new Subject<void>(),
       currentPage: signal(1),
-      currentPageStatus: signal(false),
+      isCurrentPageSuccessful: signal(false),
       isAllDataLoaded: signal(false),
       isLoading: signal(false),
       searchTermFromSearchEvent: signal<string | null>(null),
       isSelectPanelOpen: signal(false),
       loadedData: signal(defaultData<TData>()),
       cache: new Map<string, DataContainer<TData>>(),
+      searchText: signal<string | null>(null),
+      runningApiReqSubscription: Subscription.EMPTY,
       postRequestBody: signal(optionsWithDefaultValue.postRequestBody),
-      queryParamsFromUser: signal<Record<string, string | number | boolean>>({}),
-      queryParams: signal<Record<string, string | number | boolean>>({
-        ...optionsWithDefaultValue.queryParams,
-        [optionsWithDefaultValue.pageQueryParamKey]: 1,
-        [optionsWithDefaultValue.limitQueryParamKey]: optionsWithDefaultValue.dataLimitPerRequest
+      queryParamsFromUser: signal<Record<string, string | number | boolean>>({
+        ...optionsWithDefaultValue.queryParams
       })
+    });
+
+    const finalQueryParams = computed(() => {
+      const val: Record<string, string | number | boolean> = {
+        [optionsWithDefaultValue.pageQueryParamKey]: internalState.currentPage(),
+        [optionsWithDefaultValue.limitQueryParamKey]: optionsWithDefaultValue.dataLimitPerRequest,
+        ...cleanNullishFromObject(internalState.queryParamsFromUser())
+      };
+
+      const searchText = internalState.searchText();
+      if (searchText !== null) {
+        val[optionsWithDefaultValue.searchQueryParamKey] = searchText;
+      } else {
+        delete val[optionsWithDefaultValue.searchQueryParamKey];
+      }
+
+      return val;
     });
 
     destroyRef.onDestroy(() => {
@@ -197,18 +222,29 @@ export function offsetPaginatedNgSelectState<TData>(
         });
     }
 
-    function resetInternalState() {
-      internalState.queryParams.set({
-        ...internalState.queryParams(),
-        [optionsWithDefaultValue.pageQueryParamKey]: 1
-      });
-
+    function reset(options = defaultResetOpts) {
+      if (!internalState.runningApiReqSubscription.closed) {
+        internalState.runningApiReqSubscription.unsubscribe();
+      }
       internalState.currentPage.set(1);
-      internalState.currentPageStatus.set(false);
+      internalState.isCurrentPageSuccessful.set(false);
+      internalState.searchText.set(null);
 
       internalState.loadedData.set(defaultData());
       internalState.isAllDataLoaded.set(false);
       internalState.isLoading.set(false);
+
+      if (options.resetBody) {
+        internalState.postRequestBody.set(optionsWithDefaultValue.postRequestBody);
+      }
+
+      if (options.resetQueryParams) {
+        internalState.queryParamsFromUser.set(optionsWithDefaultValue.queryParams);
+      }
+
+      if (options.resetCache) {
+        internalState.cache.clear();
+      }
     }
 
     const notifyApiCall = () => {
@@ -216,7 +252,7 @@ export function offsetPaginatedNgSelectState<TData>(
     };
 
     const handleApiResponse = (newData: DataContainer<TData>) => {
-      internalState.currentPageStatus.set(true);
+      internalState.isCurrentPageSuccessful.set(true);
 
       if (newData.payload.length > 0) {
         internalState.loadedData.update((val) => {
@@ -237,10 +273,7 @@ export function offsetPaginatedNgSelectState<TData>(
       const key: CacheKey = {
         url: finalUrl,
         body: internalState.postRequestBody(),
-        queryParams: {
-          ...internalState.queryParams(),
-          ...internalState.queryParamsFromUser()
-        }
+        queryParams: finalQueryParams()
       };
 
       if (optionsWithDefaultValue.requestMethod !== "POST") {
@@ -265,10 +298,7 @@ export function offsetPaginatedNgSelectState<TData>(
           req = defer(() => {
             internalState.isLoading.set(true);
             return http.get(finalUrl, {
-              params: {
-                ...internalState.queryParams(),
-                ...internalState.queryParamsFromUser()
-              },
+              params: finalQueryParams(),
               context: optionsWithDefaultValue.httpContext.set(
                 OffsetPaginatedNgSelectNetworkRequest,
                 true
@@ -281,10 +311,7 @@ export function offsetPaginatedNgSelectState<TData>(
           req = defer(() => {
             internalState.isLoading.set(true);
             return http.post(finalUrl, internalState.postRequestBody(), {
-              params: {
-                ...internalState.queryParams(),
-                ...internalState.queryParamsFromUser()
-              },
+              params: finalQueryParams(),
               context: optionsWithDefaultValue.httpContext.set(
                 OffsetPaginatedNgSelectNetworkRequest,
                 true
@@ -344,21 +371,22 @@ export function offsetPaginatedNgSelectState<TData>(
     internalState.apiCallNotification
       .pipe(
         filter((item) => item !== null),
-        switchMap(() =>
-          internalState.isLoading() ||
-          internalState.isAllDataLoaded() ||
-          !internalState.isSelectPanelOpen()
-            ? of(null)
-            : loadDataFromApi()
-        ),
+        switchMap(() => {
+          if (
+            internalState.isLoading() ||
+            internalState.isAllDataLoaded() ||
+            !internalState.isSelectPanelOpen()
+          ) {
+            return of(null);
+          } else {
+            return loadDataFromApi();
+          }
+        }),
+        filter((val) => val !== null),
         takeUntilDestroyed(destroyRef)
       )
       .subscribe((data) => {
-        if (data) {
-          handleApiResponse(data);
-        } else {
-          internalState.currentPageStatus.set(false);
-        }
+        handleApiResponse(data);
       });
 
     typeAhead$
@@ -367,33 +395,24 @@ export function offsetPaginatedNgSelectState<TData>(
         debounceTime(optionsWithDefaultValue.debounceTimeMs),
         switchMap(([typeaheadValue, searchEventValue]) => {
           if (typeaheadValue === searchEventValue) {
-            return of(typeaheadValue);
+            return of(typeaheadValue.trim());
           }
           if (typeaheadValue !== searchEventValue && searchEventValue === "") {
             return of("");
           }
           return of(null);
         }),
-        tap((finalValue) => {
-          resetInternalState();
-          internalState.queryParams.update((currentValue) => {
-            if (!finalValue) {
-              delete currentValue[optionsWithDefaultValue.searchQueryParamKey];
-              return currentValue;
-            }
-
-            return {
-              ...currentValue,
-              [optionsWithDefaultValue.searchQueryParamKey]: finalValue
-            };
-          });
-        }),
+        filter((val) => val !== null),
         takeUntilDestroyed(destroyRef)
       )
       .subscribe((finalValue) => {
-        if (finalValue === null || (optionsWithDefaultValue.searchOnlyMode && finalValue === "")) {
+        reset();
+
+        if (optionsWithDefaultValue.searchOnlyMode && finalValue === "") {
           return;
         }
+
+        internalState.searchText.set(finalValue);
 
         notifyApiCall();
       });
@@ -423,7 +442,7 @@ export function offsetPaginatedNgSelectState<TData>(
       },
 
       onClear() {
-        resetInternalState();
+        reset();
       },
 
       onSearch(event: Record<string, unknown> & { term: string }) {
@@ -441,31 +460,25 @@ export function offsetPaginatedNgSelectState<TData>(
           return;
         }
 
-        if (internalState.currentPageStatus()) {
+        if (internalState.isCurrentPageSuccessful()) {
           internalState.currentPage.update((currentValue) => {
             return currentValue + 1;
           });
-
-          internalState.queryParams.update((currentValue) => {
-            return {
-              ...currentValue,
-              [optionsWithDefaultValue.pageQueryParamKey]: internalState.currentPage()
-            };
-          });
         }
+
         notifyApiCall();
       },
       // chainable methods
       setBody(value: any) {
         if (optionsWithDefaultValue.requestMethod === "POST") {
-          resetInternalState();
+          reset();
           internalState.postRequestBody.set(value);
         }
         return this;
       },
       clearBody() {
         if (optionsWithDefaultValue.requestMethod === "POST") {
-          resetInternalState();
+          reset();
           internalState.postRequestBody.set(null);
         }
         return this;
@@ -479,7 +492,7 @@ export function offsetPaginatedNgSelectState<TData>(
         });
 
         if (Object.keys(value).length > 0) {
-          resetInternalState();
+          reset();
 
           internalState.queryParamsFromUser.update((currentValue) => {
             return {
@@ -493,7 +506,7 @@ export function offsetPaginatedNgSelectState<TData>(
       },
 
       removeQueryParam(key: string) {
-        resetInternalState();
+        reset();
         internalState.queryParamsFromUser.update((currentValue) => {
           delete currentValue[key];
           return currentValue;
@@ -502,7 +515,7 @@ export function offsetPaginatedNgSelectState<TData>(
         return this;
       },
       removeAllQueryParams() {
-        resetInternalState();
+        reset();
         internalState.queryParamsFromUser.set({});
         return this;
       }
