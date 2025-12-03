@@ -29,3 +29,4 @@ export * from "./ng-select-utils";
 
 // Export all types and interfaces
 export * from "./types";
+export * from "./offset-paginated-prime-ng-table-state";
