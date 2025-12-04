@@ -4,9 +4,12 @@ import {
   computed,
   DestroyRef,
   inject,
+  InjectionToken,
   Injector,
   isDevMode,
   isSignal,
+  makeEnvironmentProviders,
+  Provider,
   runInInjectionContext,
   Signal,
   signal
@@ -28,8 +31,6 @@ import {
   tap
 } from "rxjs";
 import { cleanNullishFromObject } from "./utils";
-
-export const OffsetPaginatedNgSelectNetworkRequest = new HttpContextToken(() => false);
 
 type DataContainer<T> = {
   payload: T[];
@@ -56,14 +57,39 @@ export type OffsetPaginatedNgSelectStateOptions = {
   onError?: (error: Error) => void;
 };
 
+export type OffsetPaginatedNgSelectStateConfig = Omit<
+  OffsetPaginatedNgSelectStateOptions,
+  "injector" | "queryParams" | "postRequestBody"
+>;
+
+type OffsetPaginatedNgSelectStateResetOptions = {
+  resetQueryParams: boolean;
+  resetBody: boolean;
+  resetCache: boolean;
+};
+
 type CacheKey = {
   url: string;
   queryParams: Record<string, string | number | boolean>;
   body: any;
 };
 
-type DefaultOptions = Required<Omit<OffsetPaginatedNgSelectStateOptions, "onError">> &
+type DefaultOptions = Required<Omit<OffsetPaginatedNgSelectStateOptions, "onError" | "injector">> &
   Pick<OffsetPaginatedNgSelectStateOptions, "onError">;
+
+const OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG =
+  new InjectionToken<OffsetPaginatedNgSelectStateConfig>("OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG");
+
+export function provideOffsetPaginatedNgSelectStateConfig(
+  config: OffsetPaginatedNgSelectStateConfig
+): Provider {
+  return {
+    provide: OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG,
+    useValue: config
+  };
+}
+
+export const OffsetPaginatedNgSelectNetworkRequest = new HttpContextToken(() => false);
 
 function isValidData(dataArrayKey: string, dataCountKey: string, rawData: any): boolean {
   if (typeof rawData !== "object" || rawData === null || Array.isArray(rawData)) {
@@ -96,12 +122,6 @@ const defaultResetOpts = {
   resetQueryParams: false,
   resetBody: false,
   resetCache: false
-};
-
-type OffsetPaginatedNgSelectStateResetOptions = {
-  resetQueryParams: boolean;
-  resetBody: boolean;
-  resetCache: boolean;
 };
 
 export interface OffsetPaginatedNgSelectStateRef<TData> {
@@ -139,43 +159,44 @@ export function offsetPaginatedNgSelectState<TData>(
 
   const assertedInjector = options?.injector ?? inject(Injector);
 
-  const optionsWithDefaultValue: DefaultOptions = {
-    searchQueryParamKey: options?.searchQueryParamKey ?? "searchText",
-    pageQueryParamKey: options?.pageQueryParamKey ?? "page",
-    limitQueryParamKey: options?.limitQueryParamKey ?? "limit",
-    dataArrayKey: options?.dataArrayKey ?? "payload",
-    totalDataCountKey: options?.totalDataCountKey ?? "totalCount",
-    debounceTimeMs: options?.debounceTimeMs ?? 500,
-    searchOnlyMode: options?.searchOnlyMode ?? false,
-    requestMethod: options?.requestMethod ?? "GET",
-    queryParams: options?.queryParams ?? {},
-    postRequestBody: options?.postRequestBody ?? null,
-    dataLimitPerRequest: options?.dataLimitPerRequest ?? 20,
-    useCache: options?.useCache ?? false,
-    cacheTtlSec: options?.cacheTtlSec ?? 60,
-    disableCacheExpiration: options?.disableCacheExpiration ?? false,
-    injector: assertedInjector,
-    httpContext: options?.httpContext ?? new HttpContext(),
-    onError: options?.onError
-  };
-
-  const blackListedQueryKeys = [
-    optionsWithDefaultValue.searchQueryParamKey,
-    optionsWithDefaultValue.pageQueryParamKey,
-    optionsWithDefaultValue.limitQueryParamKey
-  ].map((elem) => elem.toLowerCase());
-
-  Object.keys(optionsWithDefaultValue.queryParams).forEach((key) => {
-    if (blackListedQueryKeys.includes(key.toLowerCase())) {
-      delete optionsWithDefaultValue.queryParams[key];
-    }
-  });
-
-  return runInInjectionContext(optionsWithDefaultValue.injector, () => {
+  return runInInjectionContext(assertedInjector, () => {
     const destroyRef = inject(DestroyRef);
     const http = inject(HttpClient);
+    const configFromDi = inject(OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG);
     const typeaheadSubject = new Subject<string>();
     const typeAhead$ = typeaheadSubject.asObservable();
+
+    const optionsWithDefaultValue: DefaultOptions = {
+      searchQueryParamKey:
+        options?.searchQueryParamKey ?? configFromDi.searchQueryParamKey ?? "searchText",
+      pageQueryParamKey: options?.pageQueryParamKey ?? "page",
+      limitQueryParamKey: options?.limitQueryParamKey ?? "limit",
+      dataArrayKey: options?.dataArrayKey ?? "payload",
+      totalDataCountKey: options?.totalDataCountKey ?? "totalCount",
+      debounceTimeMs: options?.debounceTimeMs ?? 500,
+      searchOnlyMode: options?.searchOnlyMode ?? false,
+      requestMethod: options?.requestMethod ?? "GET",
+      queryParams: options?.queryParams ?? {},
+      postRequestBody: options?.postRequestBody ?? null,
+      dataLimitPerRequest: options?.dataLimitPerRequest ?? 20,
+      useCache: options?.useCache ?? false,
+      cacheTtlSec: options?.cacheTtlSec ?? 60,
+      disableCacheExpiration: options?.disableCacheExpiration ?? false,
+      httpContext: options?.httpContext ?? new HttpContext(),
+      onError: options?.onError
+    };
+
+    const blackListedQueryKeys = [
+      optionsWithDefaultValue.searchQueryParamKey,
+      optionsWithDefaultValue.pageQueryParamKey,
+      optionsWithDefaultValue.limitQueryParamKey
+    ].map((elem) => elem.toLowerCase());
+
+    Object.keys(optionsWithDefaultValue.queryParams).forEach((key) => {
+      if (blackListedQueryKeys.includes(key.toLowerCase())) {
+        delete optionsWithDefaultValue.queryParams[key];
+      }
+    });
 
     const internalState = Object.seal({
       apiCallNotification: new Subject<void>(),
