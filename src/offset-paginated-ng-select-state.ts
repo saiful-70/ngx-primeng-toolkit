@@ -8,7 +8,6 @@ import {
   Injector,
   isDevMode,
   isSignal,
-  makeEnvironmentProviders,
   Provider,
   runInInjectionContext,
   Signal,
@@ -167,7 +166,7 @@ export interface OffsetPaginatedNgSelectStateRef<TData> {
   reset(options?: OffsetPaginatedNgSelectStateResetOptions): void;
   setBody(value: any): this;
   clearBody(): this;
-  patchQueryParam(value: Record<string, string | number | boolean>): this;
+  patchQueryParams(value: Record<string, string | number | boolean>): this;
   removeQueryParam(key: string): this;
   removeAllQueryParams(): this;
 }
@@ -404,7 +403,6 @@ export function offsetPaginatedNgSelectState<TData>(
 
     internalState.apiCallNotification
       .pipe(
-        filter((item) => item !== null),
         switchMap(() =>
           internalState.isLoading() ||
           internalState.isAllDataLoaded() ||
@@ -517,7 +515,7 @@ export function offsetPaginatedNgSelectState<TData>(
         return this;
       },
 
-      patchQueryParam(value: Record<string, string | number | boolean>) {
+      patchQueryParams(value: Record<string, string | number | boolean>) {
         Object.keys(value).forEach((key) => {
           if (blackListedQueryKeys.includes(key.toLowerCase())) {
             delete value[key];
@@ -541,8 +539,9 @@ export function offsetPaginatedNgSelectState<TData>(
       removeQueryParam(key: string) {
         reset();
         internalState.queryParamsFromUser.update((currentValue) => {
-          delete currentValue[key];
-          return currentValue;
+          const newValue = { ...currentValue };
+          delete newValue[key];
+          return newValue;
         });
 
         return this;
