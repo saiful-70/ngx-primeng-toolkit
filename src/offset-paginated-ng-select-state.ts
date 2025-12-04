@@ -70,13 +70,15 @@ export type OffsetPaginatedNgSelectStateOptions = {
 
 export type OffsetPaginatedNgSelectStateConfig = Omit<
   OffsetPaginatedNgSelectStateOptions,
-  "injector" | "queryParams" | "postRequestBody" | "httpContext"
+  "injector" | "httpContext" | "queryParams" | "postRequestBody"
 >;
 
 type DefaultOptions = Omit<
   Required<OffsetPaginatedNgSelectStateOptions>,
-  "onError" | "injector" | "httpContext"
->;
+  "injector" | "httpContext" | "onError"
+> & {
+  onError?: (error: Error) => void;
+};
 
 const optionsWithDefaultValue: DefaultOptions = {
   searchQueryParamKey: "searchText",
@@ -95,12 +97,13 @@ const optionsWithDefaultValue: DefaultOptions = {
   disableCacheExpiration: false
 };
 
-const OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG = new InjectionToken<
-  DefaultOptions & OffsetPaginatedNgSelectStateConfig
->("OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG", {
-  providedIn: "root",
-  factory: () => optionsWithDefaultValue
-});
+const OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG = new InjectionToken<DefaultOptions>(
+  "OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG",
+  {
+    providedIn: "root",
+    factory: () => optionsWithDefaultValue
+  }
+);
 
 export function provideOffsetPaginatedNgSelectStateConfig(
   config: OffsetPaginatedNgSelectStateConfig
@@ -515,19 +518,21 @@ export function offsetPaginatedNgSelectState<TData>(
       },
 
       patchQueryParams(value: Record<string, string | number | boolean>) {
-        Object.keys(value).forEach((key) => {
+        const newValue = { ...value };
+
+        Object.keys(newValue).forEach((key) => {
           if (blackListedQueryKeys.includes(key.toLowerCase())) {
-            delete value[key];
+            delete newValue[key];
           }
         });
 
-        if (Object.keys(value).length > 0) {
+        if (Object.keys(newValue).length > 0) {
           reset();
 
           internalState.queryParamsFromUser.update((currentValue) => {
             return {
               ...currentValue,
-              ...value
+              ...newValue
             };
           });
         }
