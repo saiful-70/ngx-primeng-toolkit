@@ -106,11 +106,14 @@ const OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG = new InjectionToken<DefaultOption
 );
 
 export function provideOffsetPaginatedNgSelectStateConfig(
-  config: OffsetPaginatedNgSelectStateConfig
+  configFactory: () => OffsetPaginatedNgSelectStateConfig
 ): Provider {
   return {
     provide: OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG,
-    useValue: { ...optionsWithDefaultValue, ...config }
+    useFactory: () => {
+      const config = configFactory();
+      return { ...optionsWithDefaultValue, ...config };
+    }
   };
 }
 
