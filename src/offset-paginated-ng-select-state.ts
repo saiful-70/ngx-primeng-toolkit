@@ -162,28 +162,33 @@ export function offsetPaginatedNgSelectState<TData>(
   return runInInjectionContext(assertedInjector, () => {
     const destroyRef = inject(DestroyRef);
     const http = inject(HttpClient);
-    const configFromDi = inject(OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG);
+    const configFromDi = inject(OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG, {
+      optional: true
+    });
     const typeaheadSubject = new Subject<string>();
     const typeAhead$ = typeaheadSubject.asObservable();
 
     const optionsWithDefaultValue: DefaultOptions = {
       searchQueryParamKey:
-        options?.searchQueryParamKey ?? configFromDi.searchQueryParamKey ?? "searchText",
-      pageQueryParamKey: options?.pageQueryParamKey ?? "page",
-      limitQueryParamKey: options?.limitQueryParamKey ?? "limit",
-      dataArrayKey: options?.dataArrayKey ?? "payload",
-      totalDataCountKey: options?.totalDataCountKey ?? "totalCount",
-      debounceTimeMs: options?.debounceTimeMs ?? 500,
-      searchOnlyMode: options?.searchOnlyMode ?? false,
-      requestMethod: options?.requestMethod ?? "GET",
+        options?.searchQueryParamKey ?? configFromDi?.searchQueryParamKey ?? "searchText",
+      pageQueryParamKey: options?.pageQueryParamKey ?? configFromDi?.pageQueryParamKey ?? "page",
+      limitQueryParamKey:
+        options?.limitQueryParamKey ?? configFromDi?.limitQueryParamKey ?? "limit",
+      dataArrayKey: options?.dataArrayKey ?? configFromDi?.dataArrayKey ?? "payload",
+      totalDataCountKey:
+        options?.totalDataCountKey ?? configFromDi?.totalDataCountKey ?? "totalCount",
+      debounceTimeMs: options?.debounceTimeMs ?? configFromDi?.debounceTimeMs ?? 500,
+      searchOnlyMode: options?.searchOnlyMode ?? configFromDi?.searchOnlyMode ?? false,
+      requestMethod: options?.requestMethod ?? configFromDi?.requestMethod ?? "GET",
       queryParams: options?.queryParams ?? {},
       postRequestBody: options?.postRequestBody ?? null,
-      dataLimitPerRequest: options?.dataLimitPerRequest ?? 20,
-      useCache: options?.useCache ?? false,
-      cacheTtlSec: options?.cacheTtlSec ?? 60,
-      disableCacheExpiration: options?.disableCacheExpiration ?? false,
-      httpContext: options?.httpContext ?? new HttpContext(),
-      onError: options?.onError
+      dataLimitPerRequest: options?.dataLimitPerRequest ?? configFromDi?.dataLimitPerRequest ?? 20,
+      useCache: options?.useCache ?? configFromDi?.useCache ?? false,
+      cacheTtlSec: options?.cacheTtlSec ?? configFromDi?.cacheTtlSec ?? 60,
+      disableCacheExpiration:
+        options?.disableCacheExpiration ?? configFromDi?.disableCacheExpiration ?? false,
+      httpContext: options?.httpContext ?? configFromDi?.httpContext ?? new HttpContext(),
+      onError: options?.onError ?? configFromDi?.onError
     };
 
     const blackListedQueryKeys = [
