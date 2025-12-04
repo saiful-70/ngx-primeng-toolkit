@@ -36,6 +36,18 @@ type DataContainer<T> = {
   totalCount: number;
 };
 
+type OffsetPaginatedNgSelectStateResetOptions = {
+  resetQueryParams: boolean;
+  resetBody: boolean;
+  resetCache: boolean;
+};
+
+type CacheKey = {
+  url: string;
+  queryParams: Record<string, string | number | boolean>;
+  body: any;
+};
+
 export type OffsetPaginatedNgSelectStateOptions = {
   searchOnlyMode?: boolean;
   searchQueryParamKey?: string;
@@ -58,23 +70,13 @@ export type OffsetPaginatedNgSelectStateOptions = {
 
 export type OffsetPaginatedNgSelectStateConfig = Omit<
   OffsetPaginatedNgSelectStateOptions,
-  "injector" | "queryParams" | "postRequestBody"
+  "injector" | "queryParams" | "postRequestBody" | "httpContext"
 >;
 
-type OffsetPaginatedNgSelectStateResetOptions = {
-  resetQueryParams: boolean;
-  resetBody: boolean;
-  resetCache: boolean;
-};
-
-type CacheKey = {
-  url: string;
-  queryParams: Record<string, string | number | boolean>;
-  body: any;
-};
-
-type DefaultOptions = Required<Omit<OffsetPaginatedNgSelectStateOptions, "onError" | "injector">> &
-  Pick<OffsetPaginatedNgSelectStateOptions, "onError">;
+type DefaultOptions = Omit<
+  Required<OffsetPaginatedNgSelectStateOptions>,
+  "onError" | "injector" | "httpContext"
+>;
 
 const optionsWithDefaultValue: DefaultOptions = {
   searchQueryParamKey: "searchText",
@@ -90,17 +92,15 @@ const optionsWithDefaultValue: DefaultOptions = {
   dataLimitPerRequest: 20,
   useCache: false,
   cacheTtlSec: 60,
-  disableCacheExpiration: false,
-  httpContext: new HttpContext()
+  disableCacheExpiration: false
 };
 
-const OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG = new InjectionToken<DefaultOptions>(
-  "OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG",
-  {
-    providedIn: "root",
-    factory: () => optionsWithDefaultValue
-  }
-);
+const OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG = new InjectionToken<
+  DefaultOptions & OffsetPaginatedNgSelectStateConfig
+>("OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG", {
+  providedIn: "root",
+  factory: () => optionsWithDefaultValue
+});
 
 export function provideOffsetPaginatedNgSelectStateConfig(
   config: OffsetPaginatedNgSelectStateConfig
@@ -191,8 +191,7 @@ export function offsetPaginatedNgSelectState<TData>(
     const mergedOptions = {
       ...configFromDi,
       ...cleanNullishFromObject(options),
-      queryParams: options?.queryParams ?? {},
-      postRequestBody: options?.postRequestBody ?? null,
+      httpContext: options?.httpContext ?? new HttpContext(),
       onError: options?.onError ?? configFromDi.onError
     };
 
