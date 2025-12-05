@@ -3,6 +3,7 @@ import {
   assertInInjectionContext,
   computed,
   DestroyRef,
+  effect,
   inject,
   InjectionToken,
   Injector,
@@ -11,10 +12,21 @@ import {
   Provider,
   runInInjectionContext,
   signal,
-  Signal
+  Signal,
+  untracked
 } from "@angular/core";
 import { TableLazyLoadEvent } from "primeng/table";
-import { catchError, defer, filter, finalize, Observable, of, Subject, switchMap } from "rxjs";
+import {
+  catchError,
+  defer,
+  filter,
+  finalize,
+  Observable,
+  of,
+  Subject,
+  switchMap,
+  takeUntil
+} from "rxjs";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { cleanNullishFromObject } from "./utils";
 
@@ -49,7 +61,6 @@ type DefaultOptions = Omit<
   "injector" | "httpContext" | "predicate" | "onError"
 > & {
   onError?: (error: Error) => void;
-  predicate?: Signal<boolean>;
 };
 
 const optionsWithDefaultValue: DefaultOptions = {
@@ -70,7 +81,7 @@ const OFFSET_PAGINATED_PRIME_NG_TABLE_STATE_CONFIG = new InjectionToken<DefaultO
   }
 );
 
-export function provideOffsetPaginatedNgSelectStateConfig(
+export function provideOffsetPaginatedPrimeNgTableStateConfig(
   configFactory: () => OffsetPaginatedPrimeNgTableStateConfig
 ): Provider {
   return {
@@ -141,6 +152,7 @@ export function offsetPaginatedPrimeNgTableState<T>(
 
     const mergedOptions: DefaultOptions & {
       httpContext: HttpContext;
+      predicate?: Signal<boolean>;
     } = {
       ...configFromDi,
       ...cleanNullishFromObject(options),
@@ -161,14 +173,17 @@ export function offsetPaginatedPrimeNgTableState<T>(
 
     const internalState = Object.seal({
       apiCallNotification: new Subject<void>(),
+      apiCallAbortNotifier: new Subject<void>(),
       isLoading: signal(false),
       currentPage: signal(1),
-      currentLimit: signal(1),
+      currentLimit: signal(15),
       totalRecords: signal(0),
       loadedData: signal(defaultData<T>()),
-      postRequestBody: signal(mergedOptions.postRequestBody),
       predicate: mergedOptions.predicate ?? signal(true),
-      queryParamsFromUser: signal<Record<string, string | number | boolean>>({})
+      postRequestBody: signal(mergedOptions.postRequestBody),
+      queryParamsFromUser: signal<Record<string, string | number | boolean>>(
+        mergedOptions.queryParams
+      )
     });
 
     const finalQueryParams = computed(() => {
@@ -181,9 +196,23 @@ export function offsetPaginatedPrimeNgTableState<T>(
       return val;
     });
 
+    effect(() => {
+      const predicate = internalState.predicate();
+      untracked(() => {
+        if (!predicate) {
+          internalState.apiCallAbortNotifier.next();
+        }
+      });
+    });
+
     destroyRef.onDestroy(() => {
       if (!internalState.apiCallNotification.closed) {
         internalState.apiCallNotification.complete();
+      }
+
+      if (!internalState.apiCallAbortNotifier.closed) {
+        internalState.apiCallAbortNotifier.next();
+        internalState.apiCallAbortNotifier.complete();
       }
     });
 
@@ -251,7 +280,8 @@ export function offsetPaginatedPrimeNgTableState<T>(
           console.error(error);
           return of(null);
         }),
-        finalize(() => internalState.isLoading.set(false))
+        finalize(() => internalState.isLoading.set(false)),
+        takeUntil(internalState.apiCallAbortNotifier)
       );
     };
 
@@ -266,7 +296,6 @@ export function offsetPaginatedPrimeNgTableState<T>(
 
     internalState.apiCallNotification
       .pipe(
-        filter((item) => item !== null),
         switchMap(() => {
           if (internalState.isLoading()) {
             return of(null);
@@ -338,10 +367,9 @@ export function offsetPaginatedPrimeNgTableState<T>(
       },
       removeQueryParam(key: string) {
         internalState.queryParamsFromUser.update((currentValue) => {
-          delete currentValue[key];
-          return currentValue;
+          const { [key]: _, ...rest } = currentValue;
+          return rest;
         });
-
         return this;
       },
       removeAllQueryParams() {

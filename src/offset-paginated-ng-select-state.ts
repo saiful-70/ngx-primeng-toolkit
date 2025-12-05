@@ -217,6 +217,7 @@ export function offsetPaginatedNgSelectState<TData>(
 
     const internalState = Object.seal({
       apiCallNotification: new Subject<void>(),
+      apiCallAbortNotifier: new Subject<void>(),
       currentPage: signal(1),
       isCurrentPageSuccessful: signal(false),
       isAllDataLoaded: signal(false),
@@ -224,13 +225,12 @@ export function offsetPaginatedNgSelectState<TData>(
       searchTermFromSearchEvent: signal<string | null>(null),
       isSelectPanelOpen: signal(false),
       loadedData: signal(defaultData<TData>()),
-      cache: new Map<string, DataContainer<TData>>(),
       searchText: signal<string | null>(null),
-      apiCallAbortNotifier: new Subject<void>(),
+      cache: new Map<string, DataContainer<TData>>(),
       postRequestBody: signal(mergedOptions.postRequestBody),
-      queryParamsFromUser: signal<Record<string, string | number | boolean>>({
-        ...mergedOptions.queryParams
-      })
+      queryParamsFromUser: signal<Record<string, string | number | boolean>>(
+        mergedOptions.queryParams
+      )
     });
 
     const finalQueryParams = computed(() => {
@@ -548,11 +548,9 @@ export function offsetPaginatedNgSelectState<TData>(
       removeQueryParam(key: string) {
         reset();
         internalState.queryParamsFromUser.update((currentValue) => {
-          const newValue = { ...currentValue };
-          delete newValue[key];
-          return newValue;
+          const { [key]: _, ...rest } = currentValue;
+          return rest;
         });
-
         return this;
       },
       removeAllQueryParams() {
