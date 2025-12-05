@@ -194,7 +194,9 @@ export function offsetPaginatedNgSelectState<TData>(
     const typeaheadSubject = new Subject<string>();
     const typeAhead$ = typeaheadSubject.asObservable();
 
-    const mergedOptions = {
+    const mergedOptions: DefaultOptions & {
+      httpContext: HttpContext;
+    } = {
       ...configFromDi,
       ...cleanNullishFromObject(options),
       httpContext: options?.httpContext ?? new HttpContext(),

@@ -4,9 +4,11 @@ import {
   computed,
   DestroyRef,
   inject,
+  InjectionToken,
   Injector,
   isDevMode,
   isSignal,
+  Provider,
   runInInjectionContext,
   signal,
   Signal
@@ -34,7 +36,51 @@ export type OffsetPaginatedPrimeNgTableStateOptions = {
   postRequestBody?: any;
   injector?: Injector;
   httpContext?: HttpContext;
+  onError?: (error: Error) => void;
 };
+
+export type OffsetPaginatedPrimeNgTableStateConfig = Omit<
+  OffsetPaginatedPrimeNgTableStateOptions,
+  "injector" | "httpContext" | "predicate" | "queryParams" | "postRequestBody"
+>;
+
+type DefaultOptions = Omit<
+  Required<OffsetPaginatedPrimeNgTableStateOptions>,
+  "injector" | "httpContext" | "predicate" | "onError"
+> & {
+  onError?: (error: Error) => void;
+  predicate?: Signal<boolean>;
+};
+
+const optionsWithDefaultValue: DefaultOptions = {
+  pageQueryParamKey: "page",
+  limitQueryParamKey: "limit",
+  dataArrayKey: "payload",
+  totalDataCountKey: "totalCount",
+  requestMethod: "GET",
+  queryParams: {},
+  postRequestBody: null
+};
+
+const OFFSET_PAGINATED_PRIME_NG_TABLE_STATE_CONFIG = new InjectionToken<DefaultOptions>(
+  "OFFSET_PAGINATED_PRIME_NG_TABLE_STATE_CONFIG",
+  {
+    providedIn: "root",
+    factory: () => optionsWithDefaultValue
+  }
+);
+
+export function provideOffsetPaginatedNgSelectStateConfig(
+  configFactory: () => OffsetPaginatedPrimeNgTableStateConfig
+): Provider {
+  return {
+    provide: OFFSET_PAGINATED_PRIME_NG_TABLE_STATE_CONFIG,
+    useFactory: () => {
+      const config = configFactory();
+      return { ...optionsWithDefaultValue, ...config };
+    }
+  };
+}
 
 export interface OffsetPaginatedPrimeNgTableStateRef<T> {
   predicate: Signal<boolean>;
@@ -46,7 +92,7 @@ export interface OffsetPaginatedPrimeNgTableStateRef<T> {
   onLazyLoad(event: TableLazyLoadEvent): void;
   setBody(value: any): this;
   clearBody(): this;
-  patchQueryParam(value: Record<string, string | number | boolean>): this;
+  patchQueryParams(value: Record<string, string | number | boolean>): this;
   removeQueryParam(key: string): this;
   removeAllQueryParams(): this;
 }
@@ -88,33 +134,30 @@ export function offsetPaginatedPrimeNgTableState<T>(
 
   const assertedInjector = options?.injector ?? inject(Injector);
 
-  const optionsWithDefaultValue: Required<OffsetPaginatedPrimeNgTableStateOptions> = {
-    predicate: options?.predicate ?? signal(true),
-    pageQueryParamKey: options?.pageQueryParamKey ?? "page",
-    limitQueryParamKey: options?.limitQueryParamKey ?? "limit",
-    dataArrayKey: options?.dataArrayKey ?? "payload",
-    totalDataCountKey: options?.totalDataCountKey ?? "totalCount",
-    requestMethod: options?.requestMethod ?? "GET",
-    queryParams: options?.queryParams ?? {},
-    postRequestBody: options?.postRequestBody ?? null,
-    injector: assertedInjector,
-    httpContext: options?.httpContext ?? new HttpContext()
-  };
-
-  const blackListedQueryKeys = [
-    optionsWithDefaultValue.pageQueryParamKey,
-    optionsWithDefaultValue.limitQueryParamKey
-  ].map((elem) => elem.toLowerCase());
-
-  Object.keys(optionsWithDefaultValue.queryParams).forEach((key) => {
-    if (blackListedQueryKeys.includes(key.toLowerCase())) {
-      delete optionsWithDefaultValue.queryParams[key];
-    }
-  });
-
-  return runInInjectionContext(optionsWithDefaultValue.injector, () => {
+  return runInInjectionContext(assertedInjector, () => {
     const http = inject(HttpClient);
     const destroyRef = inject(DestroyRef);
+    const configFromDi = inject(OFFSET_PAGINATED_PRIME_NG_TABLE_STATE_CONFIG);
+
+    const mergedOptions: DefaultOptions & {
+      httpContext: HttpContext;
+    } = {
+      ...configFromDi,
+      ...cleanNullishFromObject(options),
+      httpContext: options?.httpContext ?? new HttpContext(),
+      onError: options?.onError ?? configFromDi.onError
+    };
+
+    const blackListedQueryKeys = [
+      mergedOptions.pageQueryParamKey,
+      mergedOptions.limitQueryParamKey
+    ].map((elem) => elem.toLowerCase());
+
+    Object.keys(mergedOptions.queryParams).forEach((key) => {
+      if (blackListedQueryKeys.includes(key.toLowerCase())) {
+        delete mergedOptions.queryParams[key];
+      }
+    });
 
     const internalState = Object.seal({
       apiCallNotification: new Subject<void>(),
@@ -123,14 +166,15 @@ export function offsetPaginatedPrimeNgTableState<T>(
       currentLimit: signal(1),
       totalRecords: signal(0),
       loadedData: signal(defaultData<T>()),
-      postRequestBody: signal(optionsWithDefaultValue.postRequestBody),
+      postRequestBody: signal(mergedOptions.postRequestBody),
+      predicate: mergedOptions.predicate ?? signal(true),
       queryParamsFromUser: signal<Record<string, string | number | boolean>>({})
     });
 
     const finalQueryParams = computed(() => {
       const val: Record<string, string | number | boolean> = {
-        [optionsWithDefaultValue.pageQueryParamKey]: internalState.currentPage(),
-        [optionsWithDefaultValue.limitQueryParamKey]: internalState.currentLimit(),
+        [mergedOptions.pageQueryParamKey]: internalState.currentPage(),
+        [mergedOptions.limitQueryParamKey]: internalState.currentLimit(),
         ...cleanNullishFromObject(internalState.queryParamsFromUser())
       };
 
@@ -147,13 +191,13 @@ export function offsetPaginatedPrimeNgTableState<T>(
       const apiUrl = isSignal(url) ? url() : url;
       let req: Observable<Object>;
 
-      switch (optionsWithDefaultValue.requestMethod) {
+      switch (mergedOptions.requestMethod) {
         case "GET":
           req = defer(() => {
             internalState.isLoading.set(true);
             return http.get(apiUrl, {
               params: { ...finalQueryParams() },
-              context: optionsWithDefaultValue.httpContext.set(
+              context: mergedOptions.httpContext.set(
                 OffsetPaginatedPrimeNgTableStateNetworkRequest,
                 true
               )
@@ -166,7 +210,7 @@ export function offsetPaginatedPrimeNgTableState<T>(
             internalState.isLoading.set(true);
             return http.post(apiUrl, internalState.postRequestBody(), {
               params: { ...finalQueryParams() },
-              context: optionsWithDefaultValue.httpContext.set(
+              context: mergedOptions.httpContext.set(
                 OffsetPaginatedPrimeNgTableStateNetworkRequest,
                 true
               )
@@ -180,26 +224,30 @@ export function offsetPaginatedPrimeNgTableState<T>(
 
       return req.pipe(
         switchMap((rawData: any) => {
-          if (
-            !isValidData(
-              optionsWithDefaultValue.dataArrayKey,
-              optionsWithDefaultValue.totalDataCountKey,
-              rawData
-            )
-          ) {
+          if (!isValidData(mergedOptions.dataArrayKey, mergedOptions.totalDataCountKey, rawData)) {
             throw new Error(
-              `The response body must be an object. Valid example: { ${optionsWithDefaultValue.dataArrayKey}: [], ${optionsWithDefaultValue.totalDataCountKey}: 0 }`
+              `The response body must be an object. Valid example: { ${mergedOptions.dataArrayKey}: [], ${mergedOptions.totalDataCountKey}: 0 }`
             );
           }
 
           const dataInContainer: DataContainer<T> = {
-            payload: rawData[optionsWithDefaultValue.dataArrayKey] ?? [],
-            totalCount: rawData[optionsWithDefaultValue.totalDataCountKey] ?? 0
+            payload: rawData[mergedOptions.dataArrayKey] ?? [],
+            totalCount: rawData[mergedOptions.totalDataCountKey] ?? 0
           };
 
           return of(dataInContainer);
         }),
         catchError((error) => {
+          if (mergedOptions.onError) {
+            try {
+              mergedOptions.onError(error);
+            } catch (errorFromHandler) {
+              console.warn(
+                "Exception in onError is handled internally to keep observable running.",
+                errorFromHandler
+              );
+            }
+          }
           console.error(error);
           return of(null);
         }),
@@ -222,7 +270,7 @@ export function offsetPaginatedPrimeNgTableState<T>(
         switchMap(() => {
           if (internalState.isLoading()) {
             return of(null);
-          } else if (!optionsWithDefaultValue.predicate()) {
+          } else if (!internalState.predicate()) {
             return of(defaultData<T>());
           } else {
             return loadDataFromApi();
@@ -238,7 +286,7 @@ export function offsetPaginatedPrimeNgTableState<T>(
     return Object.seal({
       queryParams: finalQueryParams,
       postRequestBody: internalState.postRequestBody.asReadonly(),
-      predicate: optionsWithDefaultValue.predicate,
+      predicate: internalState.predicate,
       totalRecords: internalState.totalRecords.asReadonly(),
       data: computed(() => {
         return internalState.loadedData().payload;
@@ -256,37 +304,38 @@ export function offsetPaginatedPrimeNgTableState<T>(
       },
       // chainable methods
       setBody(value: any) {
-        if (optionsWithDefaultValue.requestMethod === "POST") {
+        if (mergedOptions.requestMethod === "POST") {
           internalState.postRequestBody.set(value);
         }
         return this;
       },
       clearBody() {
-        if (optionsWithDefaultValue.requestMethod === "POST") {
+        if (mergedOptions.requestMethod === "POST") {
           internalState.postRequestBody.set(null);
         }
         return this;
       },
 
-      patchQueryParam(value: Record<string, string | number | boolean>) {
-        Object.keys(value).forEach((key) => {
+      patchQueryParams(value: Record<string, string | number | boolean>) {
+        const newValue = { ...value };
+
+        Object.keys(newValue).forEach((key) => {
           if (blackListedQueryKeys.includes(key.toLowerCase())) {
-            delete value[key];
+            delete newValue[key];
           }
         });
 
-        if (Object.keys(value).length > 0) {
+        if (Object.keys(newValue).length > 0) {
           internalState.queryParamsFromUser.update((currentValue) => {
             return {
               ...currentValue,
-              ...value
+              ...newValue
             };
           });
         }
 
         return this;
       },
-
       removeQueryParam(key: string) {
         internalState.queryParamsFromUser.update((currentValue) => {
           delete currentValue[key];
