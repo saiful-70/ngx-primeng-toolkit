@@ -1,4 +1,4 @@
-import { HttpClient, HttpContext, HttpContextToken } from "@angular/common/http";
+import { HttpClient, HttpContext, HttpContextToken, HttpParams } from "@angular/common/http";
 import {
   assertInInjectionContext,
   computed,
@@ -15,6 +15,8 @@ import {
   Signal,
   untracked
 } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { LazyLoadMeta } from "primeng/api";
 import { TableLazyLoadEvent } from "primeng/table";
 import {
   catchError,
@@ -27,7 +29,6 @@ import {
   switchMap,
   takeUntil
 } from "rxjs";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { cleanNullishFromObject } from "./utils";
 
 export const OffsetPaginatedPrimeNgTableStateNetworkRequest = new HttpContextToken(() => false);
@@ -36,6 +37,11 @@ type DataContainer<T> = {
   payload: T[];
   totalCount: number;
 };
+export class PostRequestBody {
+  constructor(public readonly payload: any) {}
+}
+
+export type FilterAndSortFn = (meta: LazyLoadMeta) => HttpParams | PostRequestBody;
 
 export type OffsetPaginatedPrimeNgTableStateOptions = {
   predicate?: Signal<boolean>;
@@ -45,20 +51,20 @@ export type OffsetPaginatedPrimeNgTableStateOptions = {
   totalDataCountKey?: string;
   requestMethod?: "GET" | "POST";
   queryParams?: Record<string, string | number | boolean>;
-  postRequestBody?: any;
   injector?: Injector;
   httpContext?: HttpContext;
+  filterAndSortHandler?: FilterAndSortFn;
   onError?: (error: Error) => void;
 };
 
 export type OffsetPaginatedPrimeNgTableStateConfig = Omit<
   OffsetPaginatedPrimeNgTableStateOptions,
-  "injector" | "httpContext" | "predicate" | "queryParams" | "postRequestBody"
+  "injector" | "httpContext" | "predicate" | "queryParams"
 >;
 
 type DefaultOptions = Omit<
   Required<OffsetPaginatedPrimeNgTableStateOptions>,
-  "injector" | "httpContext" | "predicate" | "onError"
+  "injector" | "httpContext" | "predicate" | "onError" | "filterAndSortHandler"
 > & {
   onError?: (error: Error) => void;
 };
@@ -69,8 +75,7 @@ const optionsWithDefaultValue: DefaultOptions = {
   dataArrayKey: "payload",
   totalDataCountKey: "totalCount",
   requestMethod: "GET",
-  queryParams: {},
-  postRequestBody: null
+  queryParams: {}
 };
 
 const OFFSET_PAGINATED_PRIME_NG_TABLE_STATE_CONFIG = new InjectionToken<DefaultOptions>(
@@ -99,10 +104,7 @@ export interface OffsetPaginatedPrimeNgTableStateRef<T> {
   data: Signal<T[]>;
   isLoading: Signal<boolean>;
   queryParams: Signal<Record<string, string | number | boolean>>;
-  postRequestBody: Signal<any>;
   onLazyLoad(event: TableLazyLoadEvent): void;
-  setBody(value: any): this;
-  clearBody(): this;
   patchQueryParams(value: Record<string, string | number | boolean>): this;
   removeQueryParam(key: string): this;
   removeAllQueryParams(): this;
@@ -153,6 +155,7 @@ export function offsetPaginatedPrimeNgTableState<T>(
     const mergedOptions: DefaultOptions & {
       httpContext: HttpContext;
       predicate?: Signal<boolean>;
+      filterAndSortHandler?: FilterAndSortFn;
     } = {
       ...configFromDi,
       ...cleanNullishFromObject(options),
@@ -180,17 +183,19 @@ export function offsetPaginatedPrimeNgTableState<T>(
       totalRecords: signal(0),
       loadedData: signal(defaultData<T>()),
       predicate: mergedOptions.predicate ?? signal(true),
-      postRequestBody: signal(mergedOptions.postRequestBody),
       queryParamsFromUser: signal<Record<string, string | number | boolean>>(
         mergedOptions.queryParams
-      )
+      ),
+      postRequestBodyFromLazyLoad: signal<any>(null),
+      queryParamsFromLazyLoad: signal<HttpParams | null>(null)
     });
 
     const finalQueryParams = computed(() => {
       const val: Record<string, string | number | boolean> = {
         [mergedOptions.pageQueryParamKey]: internalState.currentPage(),
         [mergedOptions.limitQueryParamKey]: internalState.currentLimit(),
-        ...cleanNullishFromObject(internalState.queryParamsFromUser())
+        ...cleanNullishFromObject(internalState.queryParamsFromUser()),
+        ...cleanNullishFromObject(internalState.queryParamsFromLazyLoad() ?? {})
       };
 
       return val;
@@ -237,7 +242,7 @@ export function offsetPaginatedPrimeNgTableState<T>(
         case "POST":
           req = defer(() => {
             internalState.isLoading.set(true);
-            return http.post(apiUrl, internalState.postRequestBody(), {
+            return http.post(apiUrl, internalState.postRequestBodyFromLazyLoad(), {
               params: { ...finalQueryParams() },
               context: mergedOptions.httpContext.set(
                 OffsetPaginatedPrimeNgTableStateNetworkRequest,
@@ -314,7 +319,6 @@ export function offsetPaginatedPrimeNgTableState<T>(
 
     return Object.seal({
       queryParams: finalQueryParams,
-      postRequestBody: internalState.postRequestBody.asReadonly(),
       predicate: internalState.predicate,
       totalRecords: internalState.totalRecords.asReadonly(),
       data: computed(() => {
@@ -329,20 +333,16 @@ export function offsetPaginatedPrimeNgTableState<T>(
         internalState.currentPage.set(currentPage);
         internalState.currentLimit.set(limit);
 
+        if (mergedOptions.filterAndSortHandler) {
+          const handledResult = mergedOptions.filterAndSortHandler(event);
+          if (handledResult instanceof HttpParams) {
+            internalState.queryParamsFromLazyLoad.set(handledResult);
+          } else if (handledResult instanceof PostRequestBody) {
+            internalState.postRequestBodyFromLazyLoad.set(handledResult.payload);
+          }
+        }
+
         internalState.apiCallNotification.next();
-      },
-      // chainable methods
-      setBody(value: any) {
-        if (mergedOptions.requestMethod === "POST") {
-          internalState.postRequestBody.set(value);
-        }
-        return this;
-      },
-      clearBody() {
-        if (mergedOptions.requestMethod === "POST") {
-          internalState.postRequestBody.set(null);
-        }
-        return this;
       },
 
       patchQueryParams(value: Record<string, string | number | boolean>) {
@@ -379,3 +379,130 @@ export function offsetPaginatedPrimeNgTableState<T>(
     });
   });
 }
+
+export const UrlBasedDynamicQuery = {
+  Contains: "con",
+  NotContains: "ntcon",
+  StartsWith: "sw",
+  NotStartsWith: "ntsw",
+  EndsWith: "ew",
+  NotEndsWith: "ntew",
+  Equal: "eq",
+  NotEquals: "nteq",
+  GreaterThan: "gt",
+  GreaterThanEqual: "gte",
+  LessThan: "lt",
+  LessThanEqual: "lte"
+} as const;
+
+interface FilterDto {
+  field: string;
+  type: string;
+  value: string;
+}
+
+interface SortDto {
+  field: string;
+  isDesc: boolean;
+  serial: number;
+}
+
+interface DynamicQueryRequest {
+  filters: FilterDto[];
+  sorts: SortDto[];
+}
+
+function evaluateFilter(input: string): string | null {
+  const filterMap: Record<string, string> = {
+    startsWith: UrlBasedDynamicQuery.StartsWith,
+    notStartsWith: UrlBasedDynamicQuery.NotStartsWith,
+    endsWith: UrlBasedDynamicQuery.EndsWith,
+    notEndsWith: UrlBasedDynamicQuery.NotEndsWith,
+    contains: UrlBasedDynamicQuery.Contains,
+    notContains: UrlBasedDynamicQuery.NotContains,
+    equals: UrlBasedDynamicQuery.Equal,
+    notEquals: UrlBasedDynamicQuery.NotEquals,
+    greaterThan: UrlBasedDynamicQuery.GreaterThan,
+    lessThan: UrlBasedDynamicQuery.LessThan,
+    greaterThanOrEqual: UrlBasedDynamicQuery.GreaterThanEqual,
+    lessThanOrEqual: UrlBasedDynamicQuery.LessThanEqual
+  };
+
+  return filterMap[input] || null;
+}
+
+function extractMeta(dto: LazyLoadMeta): DynamicQueryRequest {
+  const filters: FilterDto[] = [];
+  const sorts: SortDto[] = [];
+
+  // Process filters
+  if (dto.filters) {
+    for (const [field, filterData] of Object.entries(dto.filters)) {
+      if (!filterData) {
+        continue;
+      }
+
+      // Handle both single filter and array of filters
+      const filterArray = Array.isArray(filterData) ? filterData : [filterData];
+
+      filterArray.forEach((filter) => {
+        if (
+          !filter.matchMode ||
+          filter.value === null ||
+          filter.value === undefined ||
+          filter.value === ""
+        ) {
+          return;
+        }
+
+        const filterType = evaluateFilter(filter.matchMode);
+
+        if (filterType) {
+          filters.push({
+            field,
+            type: filterType,
+            value: String(filter.value)
+          });
+        }
+      });
+    }
+  }
+
+  // Process sorting
+  if (dto.multiSortMeta && dto.multiSortMeta.length > 0) {
+    dto.multiSortMeta.forEach((sort, index) => {
+      sorts.push({
+        field: sort.field,
+        isDesc: sort.order === 1 ? false : true,
+        serial: index + 1
+      });
+    });
+  } else if (dto.sortField && dto.sortOrder) {
+    // Handle single column sort
+    const field = Array.isArray(dto.sortField) ? dto.sortField[0] : dto.sortField;
+    sorts.push({
+      field,
+      isDesc: dto.sortOrder === 1 ? false : true,
+      serial: 1
+    });
+  }
+
+  return { filters, sorts };
+}
+
+const DynamicUrlBuilder: FilterAndSortFn = (meta: LazyLoadMeta): HttpParams => {
+  const dto = extractMeta(meta);
+  const usp = new HttpParams();
+
+  dto.filters.forEach((item) => {
+    const paramKey = `${item.field}__${item.type}`;
+    usp.append(paramKey, item.value);
+  });
+
+  dto.sorts.forEach((item) => {
+    const paramKey = `$sort__${item.serial}__${item.isDesc ? "desc" : "asc"}`;
+    usp.append(paramKey, item.field);
+  });
+
+  return usp;
+};
