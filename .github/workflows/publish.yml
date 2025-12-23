@@ -36,6 +36,9 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -79,16 +82,34 @@ jobs:
             exit 0
           fi
 
-          # Commit the version change first
+          # Configure git
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+
+          # Ensure we're up to date with remote
+          git fetch origin main
+
+          # Check for any uncommitted changes and stash them temporarily
+          if ! git diff --quiet || ! git diff --cached --quiet; then
+            echo "Found uncommitted changes, stashing them"
+            git stash
+          fi
+
+          # Make sure we're on latest main
+          git reset --hard origin/main
+
+          # Re-run the version bump on clean state
+          if [[ $COMMIT_MSG == *"BREAKING CHANGE"* ]] || [[ $COMMIT_MSG == *"major:"* ]]; then
+            npm version major --no-git-tag-version
+          elif [[ $COMMIT_MSG == *"feat:"* ]] || [[ $COMMIT_MSG == *"feature:"* ]]; then
+            npm version minor --no-git-tag-version
+          elif [[ $COMMIT_MSG == *"fix:"* ]] || [[ $COMMIT_MSG == *"patch:"* ]] || [[ $COMMIT_MSG == *"bug:"* ]]; then
+            npm version patch --no-git-tag-version
+          fi
+
+          # Commit and push the version change
           git add package.json
           git commit -m "chore: bump version [skip ci]"
-
-          # Pull latest changes and rebase our commit on top (in case of concurrent updates)
-          git pull --rebase origin main
-
-          # Push the changes
           git push origin main
 
           echo "version-bumped=true" >> $GITHUB_OUTPUT
