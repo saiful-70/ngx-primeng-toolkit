@@ -79,14 +79,16 @@ jobs:
             exit 0
           fi
 
-          # Pull latest changes before pushing (in case of concurrent updates)
-          git pull --rebase origin main
-
-          # Commit the version change
+          # Commit the version change first
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add package.json
           git commit -m "chore: bump version [skip ci]"
+
+          # Pull latest changes and rebase our commit on top (in case of concurrent updates)
+          git pull --rebase origin main
+
+          # Push the changes
           git push origin main
 
           echo "version-bumped=true" >> $GITHUB_OUTPUT
