@@ -1,4 +1,8 @@
-import { HttpClient, HttpContext, HttpContextToken } from "@angular/common/http";
+import {
+  HttpClient,
+  HttpContext,
+  HttpContextToken,
+} from "@angular/common/http";
 import {
   assertInInjectionContext,
   computed,
@@ -11,7 +15,7 @@ import {
   Provider,
   runInInjectionContext,
   Signal,
-  signal
+  signal,
 } from "@angular/core";
 import { takeUntilDestroyed, toObservable } from "@angular/core/rxjs-interop";
 import {
@@ -27,14 +31,13 @@ import {
   Subject,
   switchMap,
   takeUntil,
-  tap
+  tap,
 } from "rxjs";
 import { cleanNullishFromObject } from "./utils";
 
-type DataContainer<T> = {
-  payload: T[];
-  totalCount: number;
-};
+type DataContainer<T> =
+  | { payload: T[]; totalCount: number }
+  | { data: T[]; totalCount: number };
 
 type OffsetPaginatedNgSelectStateResetOptions = {
   resetQueryParams: boolean;
@@ -94,16 +97,17 @@ const optionsWithDefaultValue: DefaultOptions = {
   dataLimitPerRequest: 20,
   useCache: false,
   cacheTtlSec: 60,
-  disableCacheExpiration: false
+  disableCacheExpiration: false,
 };
 
-const OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG = new InjectionToken<DefaultOptions>(
-  "OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG",
-  {
-    providedIn: "root",
-    factory: () => optionsWithDefaultValue
-  }
-);
+const OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG =
+  new InjectionToken<DefaultOptions>(
+    "OFFSET_PAGINATED_NG_SELECT_STATE_CONFIG",
+    {
+      providedIn: "root",
+      factory: () => optionsWithDefaultValue,
+    }
+  );
 
 export function provideOffsetPaginatedNgSelectStateConfig(
   configFactory: () => OffsetPaginatedNgSelectStateConfig
@@ -113,22 +117,37 @@ export function provideOffsetPaginatedNgSelectStateConfig(
     useFactory: () => {
       const config = configFactory();
       return { ...optionsWithDefaultValue, ...config };
-    }
+    },
   };
 }
 
-export const OffsetPaginatedNgSelectNetworkRequest = new HttpContextToken(() => false);
+export const OffsetPaginatedNgSelectNetworkRequest = new HttpContextToken(
+  () => false
+);
 
-function isValidData(dataArrayKey: string, dataCountKey: string, rawData: any): boolean {
-  if (typeof rawData !== "object" || rawData === null || Array.isArray(rawData)) {
+function isValidData(
+  dataArrayKey: string,
+  dataCountKey: string,
+  rawData: any
+): boolean {
+  if (
+    typeof rawData !== "object" ||
+    rawData === null ||
+    Array.isArray(rawData)
+  ) {
     return false;
   }
 
-  if (!(dataArrayKey in rawData) || !(dataCountKey in rawData)) {
+  // Check for either the configured dataArrayKey, or fallback to 'payload' or 'data'
+  const hasData =
+    dataArrayKey in rawData || "payload" in rawData || "data" in rawData;
+  if (!hasData || !(dataCountKey in rawData)) {
     return false;
   }
 
-  if (!Array.isArray(rawData[dataArrayKey])) {
+  const dataArray =
+    rawData[dataArrayKey] ?? rawData["payload"] ?? rawData["data"];
+  if (!Array.isArray(dataArray)) {
     return false;
   }
 
@@ -139,17 +158,17 @@ function isValidData(dataArrayKey: string, dataCountKey: string, rawData: any): 
   return true;
 }
 
-function defaultData<T>() {
+function defaultData<T>(): { payload: T[]; totalCount: number } {
   return {
     payload: [] as T[],
-    totalCount: 0
-  } satisfies DataContainer<T>;
+    totalCount: 0,
+  };
 }
 
 const defaultResetOpts = {
   resetQueryParams: false,
   resetBody: false,
-  resetCache: false
+  resetCache: false,
 };
 
 export interface OffsetPaginatedNgSelectStateRef<TData> {
@@ -200,13 +219,13 @@ export function offsetPaginatedNgSelectState<TData>(
       ...configFromDi,
       ...cleanNullishFromObject(options),
       httpContext: options?.httpContext ?? new HttpContext(),
-      onError: options?.onError ?? configFromDi.onError
+      onError: options?.onError ?? configFromDi.onError,
     };
 
     const blackListedQueryKeys = [
       mergedOptions.searchQueryParamKey,
       mergedOptions.pageQueryParamKey,
-      mergedOptions.limitQueryParamKey
+      mergedOptions.limitQueryParamKey,
     ].map((elem) => elem.toLowerCase());
 
     Object.keys(mergedOptions.queryParams).forEach((key) => {
@@ -226,18 +245,18 @@ export function offsetPaginatedNgSelectState<TData>(
       isSelectPanelOpen: signal(false),
       loadedData: signal(defaultData<TData>()),
       searchText: signal<string | null>(null),
-      cache: new Map<string, DataContainer<TData>>(),
+      cache: new Map<string, { payload: TData[]; totalCount: number }>(),
       postRequestBody: signal(mergedOptions.postRequestBody),
       queryParamsFromUser: signal<Record<string, string | number | boolean>>(
         mergedOptions.queryParams
-      )
+      ),
     });
 
     const finalQueryParams = computed(() => {
       const val: Record<string, string | number | boolean> = {
         [mergedOptions.pageQueryParamKey]: internalState.currentPage(),
         [mergedOptions.limitQueryParamKey]: mergedOptions.dataLimitPerRequest,
-        ...cleanNullishFromObject(internalState.queryParamsFromUser())
+        ...cleanNullishFromObject(internalState.queryParamsFromUser()),
       };
 
       const searchText = internalState.searchText();
@@ -275,7 +294,9 @@ export function offsetPaginatedNgSelectState<TData>(
         });
     }
 
-    function reset(options: OffsetPaginatedNgSelectStateResetOptions = defaultResetOpts) {
+    function reset(
+      options: OffsetPaginatedNgSelectStateResetOptions = defaultResetOpts
+    ) {
       internalState.apiCallAbortNotifier.next();
       internalState.currentPage.set(1);
       internalState.isCurrentPageSuccessful.set(false);
@@ -302,15 +323,18 @@ export function offsetPaginatedNgSelectState<TData>(
       internalState.apiCallNotification.next();
     };
 
-    const handleApiResponse = (newData: DataContainer<TData>) => {
+    const handleApiResponse = (newData: {
+      payload: TData[];
+      totalCount: number;
+    }) => {
       internalState.isCurrentPageSuccessful.set(true);
 
       if (newData.payload.length > 0) {
         internalState.loadedData.update((val) => {
           return {
             payload: [...val.payload, ...newData.payload],
-            totalCount: newData.totalCount
-          } satisfies DataContainer<TData>;
+            totalCount: newData.totalCount,
+          };
         });
       }
 
@@ -324,7 +348,7 @@ export function offsetPaginatedNgSelectState<TData>(
       const key: CacheKey = {
         url: finalUrl,
         body: internalState.postRequestBody(),
-        queryParams: finalQueryParams()
+        queryParams: finalQueryParams(),
       };
 
       if (mergedOptions.requestMethod !== "POST") {
@@ -350,7 +374,10 @@ export function offsetPaginatedNgSelectState<TData>(
             internalState.isLoading.set(true);
             return http.get(finalUrl, {
               params: finalQueryParams(),
-              context: mergedOptions.httpContext.set(OffsetPaginatedNgSelectNetworkRequest, true)
+              context: mergedOptions.httpContext.set(
+                OffsetPaginatedNgSelectNetworkRequest,
+                true
+              ),
             });
           });
           break;
@@ -360,7 +387,10 @@ export function offsetPaginatedNgSelectState<TData>(
             internalState.isLoading.set(true);
             return http.post(finalUrl, internalState.postRequestBody(), {
               params: finalQueryParams(),
-              context: mergedOptions.httpContext.set(OffsetPaginatedNgSelectNetworkRequest, true)
+              context: mergedOptions.httpContext.set(
+                OffsetPaginatedNgSelectNetworkRequest,
+                true
+              ),
             });
           });
           break;
@@ -371,15 +401,28 @@ export function offsetPaginatedNgSelectState<TData>(
 
       return req.pipe(
         switchMap((rawData: any) => {
-          if (!isValidData(mergedOptions.dataArrayKey, mergedOptions.totalDataCountKey, rawData)) {
+          if (
+            !isValidData(
+              mergedOptions.dataArrayKey,
+              mergedOptions.totalDataCountKey,
+              rawData
+            )
+          ) {
             throw new Error(
-              `The response body must be an object. Valid example: { ${mergedOptions.dataArrayKey}: [], ${mergedOptions.totalDataCountKey}: 0 }`
+              `The response body must be an object. Valid example: { ${mergedOptions.dataArrayKey}: [], ${mergedOptions.totalDataCountKey}: 0 } or { payload: [], ${mergedOptions.totalDataCountKey}: 0 } or { data: [], ${mergedOptions.totalDataCountKey}: 0 }`
             );
           }
 
-          const dataInContainer: DataContainer<TData> = {
-            payload: rawData[mergedOptions.dataArrayKey] ?? [],
-            totalCount: rawData[mergedOptions.totalDataCountKey] ?? 0
+          // Extract data array - support configured key, 'payload', or 'data'
+          const dataArray =
+            rawData[mergedOptions.dataArrayKey] ??
+            rawData["payload"] ??
+            rawData["data"] ??
+            [];
+
+          const dataInContainer: { payload: TData[]; totalCount: number } = {
+            payload: dataArray,
+            totalCount: rawData[mergedOptions.totalDataCountKey] ?? 0,
           };
 
           return of(dataInContainer);
@@ -426,7 +469,9 @@ export function offsetPaginatedNgSelectState<TData>(
 
     typeAhead$
       .pipe(
-        combineLatestWith(toObservable(internalState.searchTermFromSearchEvent)),
+        combineLatestWith(
+          toObservable(internalState.searchTermFromSearchEvent)
+        ),
         debounceTime(mergedOptions.debounceTimeMs),
         switchMap(([typeaheadValue, searchEventValue]) => {
           if (typeaheadValue === searchEventValue) {
@@ -537,7 +582,7 @@ export function offsetPaginatedNgSelectState<TData>(
           internalState.queryParamsFromUser.update((currentValue) => {
             return {
               ...currentValue,
-              ...newValue
+              ...newValue,
             };
           });
         }
@@ -557,7 +602,7 @@ export function offsetPaginatedNgSelectState<TData>(
         reset();
         internalState.queryParamsFromUser.set({});
         return this;
-      }
+      },
     });
   });
 }
